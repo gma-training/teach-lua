@@ -102,6 +102,14 @@ pre code { background: none; padding: 0; }
   margin: 1.4rem 0;
   font-size: 0.95rem;
 }
+/* .gotcha and .anchor are used standalone (no .callout base), so they carry
+   their own box spacing here. */
+.gotcha, .anchor {
+  border-radius: 4px;
+  padding: 0.8rem 1.1rem;
+  margin: 1.4rem 0;
+  font-size: 0.95rem;
+}
 .gotcha { background: #fbeee9; border-left: 3px solid var(--bad); }
 .gotcha::before { content: "⚠ Gotcha"; display: block; font-weight: 700; color: var(--bad); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.3rem; }
 .anchor { background: #eef2f0; border-left: 3px solid var(--good); }
