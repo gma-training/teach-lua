@@ -1,5 +1,5 @@
 {
-	"name": "Devcontainer Template",
+	"name": "Teach Lua",
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
