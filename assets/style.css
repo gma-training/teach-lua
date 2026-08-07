@@ -163,6 +163,44 @@ th { border-bottom: 2px solid var(--ink-soft); font-size: 0.8rem; text-transform
 }
 .source::before { content: "📖 Primary source"; display: block; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.3rem; color: var(--ink-soft); }
 
+/* --- Dark mode ---------------------------------------------------------- *
+   Follows the OS/browser setting. The palette is variable-driven, so we mostly
+   just remap :root; the few callouts with hand-tuned tints are overridden below.
+   Code-token colours (.c-*) ride on the variables, so they adapt for free.      */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:        #e7e3d8;
+    --ink-soft:   #a6a294;
+    --paper:      #1a1917;   /* warm near-black, matches the paper's warmth */
+    --rule:       #3a382f;
+    --accent:     #d98a6a;   /* lifted terracotta — readable on dark */
+    --accent-2:   #85b3d8;   /* lifted blue */
+    --code-bg:    #24231f;
+    --good:       #82c290;
+    --bad:        #e69384;
+    --lua51:      #a58fd0;
+    --lua54:      #85b3d8;
+  }
+
+  /* Links: retune the underline tint to the dark accent. */
+  a { border-bottom-color: rgba(217,138,106,0.35); }
+
+  /* Callout tints — dark, low-saturation versions of the light backgrounds. */
+  .gotcha  { background: #2c201c; }
+  .anchor  { background: #1d2a22; }
+  .version { background: #1c2531; border-color: #35435a; }
+  .ask     { background: #282417; }
+
+  /* Code tokens that used near-black/olive tints need a touch more lift. */
+  .c-comment { color: #97927c; }
+
+  /* Version tags: lighter chip backgrounds want dark text for contrast. */
+  .tag-nvim, .tag-hypr { color: #14130f; }
+
+  /* Tables: soften the heavy header rule so it doesn't glare. */
+  th { border-bottom-color: var(--ink-soft); }
+}
+
 /* --- Print -------------------------------------------------------------- */
 @media print {
   body { margin: 0; max-width: none; font-size: 11pt; background: #fff; }
