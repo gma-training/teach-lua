@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Values, nil &amp; truthiness</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Reference card</span>
+</div>
+
+<h1>Values, <code>nil</code> &amp; truthiness</h1>
+<p class="subtitle">The pocket card. Fluency comes from the lessons; this is for the moment you forget.</p>
+
+<h2>The value types</h2>
+<table>
+  <tr><th>Type</th><th>Examples</th><th>Python/Ruby analogue</th></tr>
+  <tr><td><code>nil</code></td><td><code>nil</code></td><td>Python <code>None</code> / Ruby <code>nil</code></td></tr>
+  <tr><td><code>boolean</code></td><td><code>true</code> <code>false</code></td><td>same</td></tr>
+  <tr><td><code>number</code></td><td><code>42</code> <code>3.14</code></td><td>int/float — <em>but see version note</em></td></tr>
+  <tr><td><code>string</code></td><td><code>"hi"</code> <code>'hi'</code> <code>[[hi]]</code></td><td>str; immutable</td></tr>
+  <tr><td><code>table</code></td><td><code>{}</code> <code>{1,2}</code> <code>{x=1}</code></td><td>dict + list fused into one</td></tr>
+  <tr><td><code>function</code></td><td><code>function() end</code></td><td>first-class, like both</td></tr>
+  <tr><td><code>userdata</code>, <code>thread</code></td><td>—</td><td>C data / coroutine (rare in configs)</td></tr>
+</table>
+<p>Check a value's type with <code>type(x)</code>, which returns a string: <code>type(nil) == "nil"</code>.</p>
+
+<h2>Truthiness — the whole rule</h2>
+<p><strong>Only <code>nil</code> and <code>false</code> are falsy. Everything else is truthy —
+including <code>0</code>, <code>0.0</code>, <code>""</code>, and <code>{}</code>.</strong></p>
+<table>
+  <tr><th>Value</th><th>Lua</th><th>Ruby</th><th>Python</th></tr>
+  <tr><td><code>nil</code> / <code>None</code></td><td>falsy</td><td>falsy</td><td>falsy</td></tr>
+  <tr><td><code>false</code></td><td>falsy</td><td>falsy</td><td>falsy</td></tr>
+  <tr><td><code>0</code></td><td><strong>truthy</strong></td><td>truthy</td><td>falsy</td></tr>
+  <tr><td><code>""</code></td><td><strong>truthy</strong></td><td>truthy</td><td>falsy</td></tr>
+  <tr><td><code>{}</code> / <code>[]</code></td><td><strong>truthy</strong></td><td>truthy</td><td>falsy</td></tr>
+</table>
+<p><strong>Lua truthiness == Ruby truthiness.</strong> Python is the odd one out.</p>
+
+<h2>Idioms that fall out of the rule</h2>
+<pre><code><span class="c-comment">-- default value (like Ruby  x = x || default)</span>
+x = x <span class="c-key">or</span> default
+
+<span class="c-comment">-- ternary  (cond ? a : b)  — works ONLY if a is never falsy</span>
+result = cond <span class="c-key">and</span> a <span class="c-key">or</span> b
+
+<span class="c-comment">-- presence check: nil means "absent", not "error"</span>
+<span class="c-key">if</span> config.width <span class="c-key">then</span> ... <span class="c-key">end</span></code></pre>
+
+<h2>Syntax tells (vs Python/Ruby)</h2>
+<table>
+  <tr><th>Concept</th><th>Lua</th><th>Not</th></tr>
+  <tr><td>not-equal</td><td><code>~=</code></td><td><code>!=</code></td></tr>
+  <tr><td>string concat</td><td><code>..</code></td><td><code>+</code></td></tr>
+  <tr><td>logical ops</td><td><code>and or not</code></td><td><code>&amp;&amp; || !</code></td></tr>
+  <tr><td>comment</td><td><code>-- line</code>, <code>--[[ block ]]</code></td><td><code>#</code> <code>//</code></td></tr>
+  <tr><td>local variable</td><td><code>local x = 1</code></td><td>bare <code>x = 1</code> (that's global!)</td></tr>
+  <tr><td>length</td><td><code>#s</code></td><td><code>len(s)</code></td></tr>
+</table>
+
+<div class="version">
+  <strong>Numbers split by version.</strong>
+  <span class="tag tag-nvim">Neovim 5.1</span> every number is a 64-bit float — there is no integer type.
+  <span class="tag tag-hypr">Hyprland 5.4</span> numbers have integer and float <em>subtypes</em>; <code>math.type(x)</code> tells them apart, and <code>3 // 2</code> is integer floor division. Truthiness and <code>nil</code> are <strong>identical</strong> across both versions.
+</div>
+
+<div class="lesson-nav">
+  <a href="../lessons/0001-values-nil-and-truthiness.html">← Lesson 01: Values, nil &amp; truthiness</a>
+  <a href="https://www.lua.org/manual/5.4/manual.html#2.1">Lua manual §2.1: Values and Types →</a>
+</div>
+
+</body>
+</html>

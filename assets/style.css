@@ -1,0 +1,164 @@
+/* ==========================================================================
+   Shared course stylesheet — Lua for Neovim & Hyprland configs
+   Tufte-inspired: serif body, generous margins, muted palette, prints well.
+   Every lesson and reference doc links this so the course reads as one thing.
+   ========================================================================== */
+
+:root {
+  --ink:        #1a1a1a;
+  --ink-soft:   #4a4a4a;
+  --paper:      #fdfcf8;
+  --rule:       #d8d4c8;
+  --accent:     #7a3b2e;   /* muted terracotta — links, headings */
+  --accent-2:   #2e5a7a;   /* muted blue — version notes */
+  --code-bg:    #f3f0e7;
+  --good:       #2f6b3f;
+  --bad:        #9c3025;
+  --lua51:      #5a4a7a;   /* Neovim / 5.1 */
+  --lua54:      #2e5a7a;   /* Hyprland / 5.4 */
+  --maxw:       46rem;
+}
+
+html { font-size: 17px; }
+
+body {
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.55;
+  max-width: var(--maxw);
+  margin: 4rem auto 6rem;
+  padding: 0 1.5rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Masthead ----------------------------------------------------------- */
+.masthead {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.6rem;
+  margin-bottom: 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.masthead .course { font-weight: 700; }
+
+/* --- Typography --------------------------------------------------------- */
+h1 {
+  font-weight: 700;
+  font-size: 2.1rem;
+  line-height: 1.1;
+  margin: 0 0 0.3rem;
+  color: var(--ink);
+}
+.subtitle {
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 1.15rem;
+  margin: 0 0 2.5rem;
+}
+h2 {
+  font-weight: 700;
+  font-size: 1.35rem;
+  margin: 2.8rem 0 0.8rem;
+  color: var(--accent);
+}
+h3 { font-size: 1.05rem; margin: 1.8rem 0 0.5rem; }
+p, li { font-size: 1.02rem; }
+a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(122,59,46,0.3); }
+a:hover { border-bottom-color: var(--accent); }
+strong { font-weight: 700; }
+
+/* --- Code --------------------------------------------------------------- */
+code, pre, .mono {
+  font-family: "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+  font-size: 0.86em;
+}
+code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 0.9rem 1.1rem;
+  overflow-x: auto;
+  line-height: 1.45;
+}
+pre code { background: none; padding: 0; }
+.c-comment { color: #8a8570; font-style: italic; }
+.c-key     { color: var(--accent); font-weight: 600; }
+.c-str     { color: var(--good); }
+.c-num     { color: var(--accent-2); }
+.c-nil     { color: var(--bad); font-weight: 600; }
+
+/* --- Callouts ----------------------------------------------------------- */
+.callout {
+  border-radius: 4px;
+  padding: 0.8rem 1.1rem;
+  margin: 1.4rem 0;
+  font-size: 0.95rem;
+}
+.gotcha { background: #fbeee9; border-left: 3px solid var(--bad); }
+.gotcha::before { content: "⚠ Gotcha"; display: block; font-weight: 700; color: var(--bad); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.3rem; }
+.anchor { background: #eef2f0; border-left: 3px solid var(--good); }
+.anchor::before { content: "↔ You already know this"; display: block; font-weight: 700; color: var(--good); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.3rem; }
+
+/* Version divergence box — the course through-line */
+.version {
+  background: #eef1f5;
+  border: 1px solid #cbd6e2;
+  border-radius: 4px;
+  padding: 0.8rem 1.1rem;
+  margin: 1.4rem 0;
+  font-size: 0.93rem;
+}
+.version::before { content: "⇄ 5.1 vs 5.4"; display: block; font-weight: 700; color: var(--accent-2); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.4rem; }
+.tag { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 0.05em 0.45em; border-radius: 3px; vertical-align: middle; letter-spacing: 0.03em; }
+.tag-nvim { background: var(--lua51); color: #fff; }
+.tag-hypr { background: var(--lua54); color: #fff; }
+
+/* --- Tables ------------------------------------------------------------- */
+table { border-collapse: collapse; width: 100%; margin: 1.4rem 0; font-size: 0.92rem; }
+th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { border-bottom: 2px solid var(--ink-soft); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* --- Footer / navigation ------------------------------------------------ */
+.lesson-nav {
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  justify-content: space-between;
+}
+.ask {
+  margin-top: 2.5rem;
+  background: #f6f2e8;
+  border: 1px dashed var(--accent);
+  border-radius: 4px;
+  padding: 0.9rem 1.1rem;
+  font-size: 0.95rem;
+}
+.ask::before { content: "🎓 Ask your teacher"; display: block; font-weight: 700; color: var(--accent); font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.3rem; }
+.source {
+  font-size: 0.9rem;
+  background: var(--code-bg);
+  border-radius: 4px;
+  padding: 0.7rem 1rem;
+  margin: 1.6rem 0;
+}
+.source::before { content: "📖 Primary source"; display: block; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.3rem; color: var(--ink-soft); }
+
+/* --- Print -------------------------------------------------------------- */
+@media print {
+  body { margin: 0; max-width: none; font-size: 11pt; background: #fff; }
+  .quiz-check, .ask { break-inside: avoid; }
+  a { color: var(--ink); border: none; }
+  .masthead { border-color: #000; }
+}

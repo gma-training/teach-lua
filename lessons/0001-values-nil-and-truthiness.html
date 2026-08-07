@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 01 · Values, nil &amp; truthiness</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/quiz.js"></script>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Lesson 01</span>
+</div>
+
+<h1>Values, <code>local</code> &amp; truthiness</h1>
+<p class="subtitle">Four surprises Lua has waiting for a Python/Ruby brain — and every one of them shows up in the first ten lines of a real config.</p>
+
+<p>You already know how to program. So we start not with "what is a variable," but with
+the handful of things Lua does <em>differently</em> from Python and Ruby. Get these four
+wrong and a config line does something quietly other than what you read. Get them right and
+you can already read most of the <code>if</code>s, defaults, and assignments in any
+<code>init.lua</code> or <code>hyprland.lua</code>.</p>
+
+<h2>1 · A bare variable is <em>global</em></h2>
+<p>In Python and Ruby, a plain assignment inside a scope makes a <strong>local</strong>. In Lua
+it's the opposite: a bare name is a <strong>global</strong>. You opt into locality with the
+<code>local</code> keyword.</p>
+
+<pre><code>x = 10          <span class="c-comment">-- GLOBAL. Visible everywhere, forever.</span>
+<span class="c-key">local</span> y = 10    <span class="c-comment">-- local to this chunk/block. What you almost always want.</span></code></pre>
+
+<div class="anchor">
+  This is the one place <strong>shell</strong> is your anchor, not Python: a plain
+  <code>FOO=1</code> in a shell script is global too, and you reach for <code>local</code>
+  inside a function to contain it. Lua works the same way — except you want <code>local</code>
+  almost <em>everywhere</em>, not just in functions.
+</div>
+
+<div class="gotcha">
+  Forgetting <code>local</code> doesn't error — it silently creates a global. In a config that
+  <code>require()</code>s several files, a stray global in one file can clobber a name in
+  another. Rule of thumb: <strong>type <code>local</code> until you have a specific reason not to.</strong>
+</div>
+
+<div class="quiz" data-answer="0">
+  <p class="q">At the top level of a Neovim <code>init.lua</code>, the line <code>greeting = "hi"</code> does what?</p>
+  <button>creates a global variable</button>
+  <button>creates a local variable</button>
+  <button>raises a syntax error</button>
+  <button>does nothing at all</button>
+  <p class="why" hidden>Global. No <code>local</code> keyword means the name is written into the
+  global environment table (<code>_G</code>). Harmless here, but a habit worth breaking early.</p>
+</div>
+
+<h2>2 · Only <code>nil</code> and <code>false</code> are falsy</h2>
+<p>This is the big one. In Lua, <strong>every value is truthy except <code>nil</code> and
+<code>false</code></strong>. That means <code>0</code>, <code>0.0</code>, the empty string
+<code>""</code>, and the empty table <code>{}</code> are all <strong>truthy</strong>.</p>
+
+<div class="anchor">
+  <strong>Lua's rule is exactly Ruby's rule.</strong> If you think in Ruby here, you will never
+  be wrong: only <code>nil</code> and <code>false</code> are falsy in both. It is <strong>Python</strong>
+  that misleads you — Python treats <code>0</code>, <code>""</code> and <code>[]</code> as falsy,
+  and Lua does not. When your Python instinct fires here, override it with Ruby.
+</div>
+
+<pre><code><span class="c-key">if</span> gaps == 0 <span class="c-key">then</span> ... <span class="c-key">end</span>   <span class="c-comment">-- correct: test the value explicitly</span>
+<span class="c-key">if</span> gaps <span class="c-key">then</span> ... <span class="c-key">end</span>         <span class="c-comment">-- gaps == 0 still enters here! 0 is truthy.</span></code></pre>
+
+<div class="quiz" data-answer="3">
+  <p class="q">Which one of these is <em>falsy</em> in Lua?</p>
+  <button>the number zero</button>
+  <button>an empty string</button>
+  <button>an empty table</button>
+  <button>the value nil</button>
+  <p class="why" hidden><code>nil</code> is falsy; the other three are all truthy. If you pictured
+  Python's rules you'd have flagged zero and the empty string too — that's the trap.</p>
+</div>
+
+<h2>3 · <code>nil</code> means "absent", and reading it is not an error</h2>
+<p><code>nil</code> is Lua's <code>None</code>/<code>nil</code>: the absence of a value. The Lua-specific
+part is how forgiving reads are. Referencing a variable that was never set, or a table key that
+isn't there, <strong>returns <code>nil</code> — it does not raise</strong>.</p>
+
+<pre><code><span class="c-key">local</span> cfg = { width = 80 }
+print(cfg.height)   <span class="c-comment">--> nil   (no KeyError, no NameError)</span>
+print(undefined)    <span class="c-comment">--> nil   (unknown global, still just nil)</span></code></pre>
+
+<div class="anchor">
+  Closer to Ruby's <code>hash[:missing] → nil</code> than to Python's <code>KeyError</code>.
+  The upside: presence checks are just <code>if cfg.height then</code>. The downside is the
+  gotcha below.
+</div>
+
+<div class="gotcha">
+  Because a typo'd key silently reads as <code>nil</code> instead of crashing, a misspelled
+  option in a config often fails <em>silently</em> — the setting simply never takes effect.
+  When a config line "does nothing," suspect a <code>nil</code> from a typo first.
+</div>
+
+<h2>4 · The default idiom, and three syntax tells</h2>
+<p>Surprises 2 and 3 combine into the single most common idiom you'll see in configs — the
+<code>or</code> default, identical to Ruby's <code>x ||= default</code>:</p>
+
+<pre><code><span class="c-key">local</span> width = opts.width <span class="c-key">or</span> 80   <span class="c-comment">-- if opts.width is nil/false, use 80</span></code></pre>
+
+<p>And the small syntax tells that catch every newcomer:</p>
+<table>
+  <tr><th>You mean</th><th>Lua wants</th><th>You might type</th></tr>
+  <tr><td>not equal</td><td><code>~=</code></td><td><code>!=</code> ✗</td></tr>
+  <tr><td>join strings</td><td><code>..</code></td><td><code>+</code> ✗</td></tr>
+  <tr><td>and / or / not</td><td><code>and or not</code></td><td><code>&amp;&amp; || !</code> ✗</td></tr>
+</table>
+
+<div class="reveal">
+  <p class="q">Predict the two printed lines, then reveal.</p>
+<pre><code><span class="c-key">local</span> width = nil
+<span class="c-key">local</span> w = width <span class="c-key">or</span> 80
+print(w)
+print(0 <span class="c-key">and</span> "reached")</code></pre>
+  <button class="reveal-btn">Reveal answer</button>
+  <div class="answer" hidden>
+    <p><strong><code>80</code></strong> then <strong><code>reached</code></strong>.</p>
+    <p><code>width</code> is <code>nil</code> (falsy), so <code>or</code> returns its second operand, <code>80</code>.
+    In the second line <code>0</code> is <em>truthy</em>, so <code>and</code> evaluates and returns its
+    right-hand side, the string <code>"reached"</code>. A Python instinct would expect the <code>0</code>
+    to short-circuit — it doesn't.</p>
+  </div>
+</div>
+
+<div class="version">
+  Nothing in this lesson diverges between <span class="tag tag-nvim">Neovim 5.1</span> and
+  <span class="tag tag-hypr">Hyprland 5.4</span>: <code>local</code>, <code>nil</code>, and truthiness
+  are identical in every Lua version. The first real divergence — how <em>numbers</em> behave — is
+  next lesson.
+</div>
+
+<div class="source">
+  Read <a href="https://www.lua.org/pil/2.2.html">Programming in Lua §2.2 "Booleans"</a> and
+  <a href="https://www.lua.org/pil/2.1.html">§2.1 "Nil"</a> — two short pages by Lua's chief
+  architect. It's the highest-trust confirmation of everything above.
+</div>
+
+<div class="ask">
+  I'm your teacher — if any of these four surprised you, or you want more predict-the-output
+  drills before moving on, just ask. Good questions to fire back: <em>"why does Lua default to
+  globals?"</em> or <em>"show me a config bug caused by a missing <code>local</code>."</em>
+</div>
+
+<h3>Retrieval check (do this from memory, no scrolling)</h3>
+<ol>
+  <li>Name the only two falsy values in Lua.</li>
+  <li>What does <code>keyword_you_never_typed</code> evaluate to if it was never assigned?</li>
+  <li>Rewrite <code>x = x || 5</code> (Ruby) in Lua.</li>
+  <li>Which language — Python or Ruby — should you trust for Lua's truthiness?</li>
+</ol>
+
+<div class="lesson-nav">
+  <a href="../reference/values-and-truthiness.html">📇 Reference card: Values, nil &amp; truthiness</a>
+  <span>Next → Numbers &amp; strings (where 5.1 and 5.4 first split)</span>
+</div>
+
+</body>
+</html>
