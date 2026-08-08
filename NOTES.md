@@ -10,8 +10,18 @@
 
 ## Hard scope
 - Teach **the Lua language only**. Neovim `vim.*` and Hyprland `hl.*` APIs are OUT OF SCOPE.
-- APIs appear only to pin the version: **Neovim = LuaJIT / Lua 5.1**, **Hyprland 0.55+ = Lua 5.4**.
 - Do NOT edit real configs in this project. All practice stays inside lessons.
+
+## Naming the versions (IMPORTANT — user preference)
+- In lessons/reference cards, refer to the versions as **"Lua 5.1"** and **"Lua 5.4"** only.
+  **Do NOT say "Neovim" or "Hyprland"** — the user already knows which is which and finds the
+  repetition noisy. Applies from Lesson 02 onward; Lesson 01 is left as-is by request.
+- Use the version-named tag styles `.tag-51` / `.tag-54` (NOT the legacy `.tag-nvim` / `.tag-hypr`,
+  which remain only for Lesson 01).
+- Naming the *runtime* (e.g. "LuaJIT") is fine when strictly needed for accuracy — LuaJIT is a Lua
+  implementation, not one of the two apps. Keep even that minimal.
+- Meta docs (MISSION.md, RESOURCES.md) may still reference Neovim/Hyprland to explain *why* 5.1 and
+  5.4 are the target versions — that's rationale, not lesson content.
 
 ## Link presentation
 - When giving the user clickable links to lessons/reference/assets, prefix with
