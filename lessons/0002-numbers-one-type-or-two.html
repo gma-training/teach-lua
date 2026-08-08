@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 02 · Numbers — one type, or two?</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/quiz.js"></script>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Lesson 02</span>
+</div>
+
+<h1>Numbers: one type, or two?</h1>
+<p class="subtitle">The first place your two configs genuinely disagree. A number means something different in Neovim than it does in Hyprland — and the gap is a real bug source, not a footnote.</p>
+
+<p>Everything in Lesson 01 — <code>local</code>, <code>nil</code>, truthiness — behaves identically in
+every Lua. Numbers are where that stops. Here Neovim (LuaJIT, Lua 5.1) and Hyprland (Lua 5.4)
+diverge, and code you write comfortably in one can throw a syntax error or print something
+unexpected in the other. This lesson is the whole divergence, small enough to hold in your head.</p>
+
+<h2>Two models, one word</h2>
+<p>In <span class="tag tag-nvim">Neovim 5.1</span> there is <strong>one</strong> number type: every
+number is a 64-bit float. <code>1</code> and <code>1.0</code> are literally the same value.</p>
+<p>In <span class="tag tag-hypr">Hyprland 5.4</span> a number has <strong>two</strong> subtypes,
+<em>integer</em> and <em>float</em>. A literal with a dot or exponent is a float; otherwise it's an
+integer. Both still report <code>type(x) == "number"</code> — you tell them apart with
+<code>math.type</code>, which <em>doesn't even exist</em> in Neovim.</p>
+
+<pre><code><span class="c-comment">-- Hyprland 5.4</span>
+print(math.type(3))     <span class="c-comment">--> integer</span>
+print(math.type(3.0))   <span class="c-comment">--> float</span>
+<span class="c-comment">-- Neovim 5.1: math.type is nil; calling it errors</span></code></pre>
+
+<div class="anchor">
+  You already know the 5.4 model: it's <strong>Python 3</strong>. Integers and floats are distinct,
+  and (next section) <code>/</code> vs <code>//</code> work exactly as they do in Python. The 5.1
+  model — a single float type, no integer, no <code>//</code> — is the unfamiliar one; think of it
+  as "everything is a Python <code>float</code>."
+</div>
+
+<h2>Division is where it bites</h2>
+<p>Two operators, and only one of them exists everywhere:</p>
+<table>
+  <tr><th>Expression</th><th>Neovim 5.1</th><th>Hyprland 5.4</th></tr>
+  <tr><td><code>10 / 2</code></td><td><code>5</code></td><td><code>5.0</code> — <code>/</code> is <em>always</em> float</td></tr>
+  <tr><td><code>7 // 2</code></td><td><strong>syntax error</strong></td><td><code>3</code> — floor division</td></tr>
+  <tr><td><code>2 ^ 3</code></td><td><code>8</code></td><td><code>8.0</code> — <code>^</code> is always float</td></tr>
+</table>
+
+<div class="gotcha">
+  <code>//</code> is a <strong>Lua 5.3+ feature</strong>. LuaJIT never added it, so writing
+  <code>7 // 2</code> in a Neovim config is a <em>parse error</em> — the file won't load at all.
+  This is the classic trap: you learn <code>//</code> from a Hyprland snippet, reach for it in
+  <code>init.lua</code>, and Neovim refuses to start.
+</div>
+
+<div class="quiz" data-answer="1">
+  <p class="q">In a Hyprland config, what does <code>print(10 / 2)</code> display?</p>
+  <button>the number 5</button>
+  <button>the number 5.0</button>
+  <button>a parse error</button>
+  <button>the value nil</button>
+  <p class="why" hidden>In 5.4, <code>/</code> is always float division, so <code>10 / 2</code> is the
+  float <code>5.0</code>, printed with its <code>.0</code>. In Neovim the same line prints <code>5</code>,
+  because there are no integers to distinguish it from.</p>
+</div>
+
+<h2>Printing gives the subtype away</h2>
+<p>Because 5.4 tracks the subtype, it prints floats with a trailing <code>.0</code> so you can see
+what you have. 5.1 has nothing to distinguish, so it doesn't.</p>
+<pre><code>print(1.0)
+<span class="c-comment">-- Neovim 5.1  --> 1</span>
+<span class="c-comment">-- Hyprland 5.4 --> 1.0</span></code></pre>
+<p>Useful signal when debugging: if a Hyprland value prints <code>1.0</code> where you expected
+<code>1</code>, some arithmetic upstream turned it into a float — often a stray <code>/</code>.</p>
+
+<div class="reveal">
+  <p class="q">Predict each result, then reveal.</p>
+<pre><code><span class="c-comment">-- what happens in each config?</span>
+<span class="c-key">local</span> cols = 7 // 2</code></pre>
+  <button class="reveal-btn">Reveal answer</button>
+  <div class="answer" hidden>
+    <p><span class="tag tag-hypr">Hyprland 5.4</span>: <code>cols</code> becomes <strong><code>3</code></strong> (floor division).</p>
+    <p><span class="tag tag-nvim">Neovim 5.1</span>: the file <strong>fails to parse</strong> — <code>//</code>
+    isn't a valid operator. The portable rewrite that works in both is
+    <code>local cols = math.floor(7 / 2)</code>, which is also <code>3</code>.</p>
+  </div>
+</div>
+
+<h2>Writing arithmetic that survives both</h2>
+<p>A few habits keep config math portable:</p>
+<ul>
+  <li><strong>Floor division:</strong> write <code>math.floor(a / b)</code>, never <code>a // b</code>, unless the file is Hyprland-only.</li>
+  <li><strong>Bitwise:</strong> <span class="tag tag-hypr">5.4</span> has native <code>&amp; | ~ &lt;&lt; &gt;&gt;</code>; <span class="tag tag-nvim">5.1</span> has none — LuaJIT ships a <code>bit</code> library (<code>bit.band(5, 3)</code>). Different code entirely, so keep bit-twiddling out of shared logic.</li>
+  <li><strong>Don't lean on subtype:</strong> guard any <code>math.type</code> use behind <code>if math.type then</code>, since it's absent on 5.1.</li>
+</ul>
+
+<div class="quiz" data-answer="1">
+  <p class="q">Which floor-division approach works unchanged in <em>both</em> Neovim and Hyprland?</p>
+  <button>the <code>//</code> operator</button>
+  <button>the <code>math.floor</code> call</button>
+  <button>the <code>bit.band</code> call</button>
+  <button>the plain <code>/</code> slash</button>
+  <p class="why" hidden><code>math.floor(a / b)</code> works everywhere: <code>/</code> exists in both, and
+  <code>math.floor</code> is in the standard library of every Lua. <code>//</code> is 5.4-only;
+  <code>bit.band</code> is a Neovim-only library and isn't division; plain <code>/</code> doesn't floor.</p>
+</div>
+
+<div class="version">
+  This whole lesson <em>is</em> the divergence. Anchor it: <span class="tag tag-hypr">Hyprland 5.4</span>
+  numbers = <strong>Python 3</strong> (<code>/</code>, <code>//</code>, int vs float).
+  <span class="tag tag-nvim">Neovim 5.1</span> = <strong>one float type, no <code>//</code></strong>.
+  When in doubt, write to the 5.1 floor (no <code>//</code>, no native bitwise) and it runs on both.
+</div>
+
+<div class="source">
+  Primary: <a href="https://www.lua.org/manual/5.4/manual.html#3.4.3">Lua 5.4 Reference Manual §3.4.3 "Coercions and Conversions" / Arithmetic</a>
+  for the 5.4 rules, and <a href="https://luajit.org/extensions.html">LuaJIT Extensions</a> (see "not backported": floor division, bit operators)
+  for exactly what Neovim lacks.
+</div>
+
+<div class="ask">
+  I'm your teacher — worth asking: <em>"show me a real config bug caused by <code>//</code> in Neovim,"</em>
+  or <em>"when would I actually care whether a Hyprland value is an integer or a float?"</em>
+  (Answer: <code>string.format("%d", x)</code> and array indices are where the subtype starts to matter.)
+</div>
+
+<h3>Retrieval check (from memory, no scrolling)</h3>
+<ol>
+  <li>How many number subtypes does Neovim's Lua have? How many does Hyprland's?</li>
+  <li>What does <code>7 // 2</code> do in each of your two configs?</li>
+  <li>Write floor division of <code>a</code> by <code>b</code> that runs in both.</li>
+  <li>Which language — Python 3 or JavaScript — is the better mental model for Hyprland numbers?</li>
+</ol>
+
+<div class="lesson-nav">
+  <a href="0001-values-nil-and-truthiness.html">← Lesson 01</a>
+  <a href="../reference/numbers-5.1-vs-5.4.html">📇 Reference: Numbers 5.1 vs 5.4</a>
+  <span>Next → Strings &amp; the <code>:</code> method call</span>
+</div>
+
+</body>
+</html>

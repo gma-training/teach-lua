@@ -28,4 +28,4 @@ and **5.4 (Hyprland)**. Resources about the Neovim/Hyprland *APIs* are deliberat
   Use for: specific "why does this error" questions with searchable prior answers.
 
 ## Gaps
-- No single resource cleanly tabulates the **5.1 vs 5.4** language differences for a config-writer's needs. We are building our own reference for this (see `reference/`).
+- No single resource cleanly tabulates the **5.1 vs 5.4** language differences for a config-writer's needs. We are building our own as we go — started with `reference/numbers-5.1-vs-5.4.html` (numbers/division/bitwise). Extend this per-topic as later lessons hit new divergences (`goto`, `unpack` vs `table.unpack`, `#` on tables with holes).

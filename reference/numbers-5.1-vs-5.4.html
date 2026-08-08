@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Numbers — 5.1 vs 5.4</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Reference card</span>
+</div>
+
+<h1>Numbers: <span class="tag tag-nvim">Neovim 5.1</span> vs <span class="tag tag-hypr">Hyprland 5.4</span></h1>
+<p class="subtitle">The one card to reach for when arithmetic behaves differently in your two configs.</p>
+
+<h2>The number model</h2>
+<table>
+  <tr><th>&nbsp;</th><th>Neovim · LuaJIT 5.1</th><th>Hyprland · 5.4</th></tr>
+  <tr><td>Subtypes</td><td>none — every number is a 64-bit <strong>float</strong></td><td><strong>integer</strong> and <strong>float</strong></td></tr>
+  <tr><td><code>1</code> vs <code>1.0</code></td><td>identical value</td><td>integer vs float</td></tr>
+  <tr><td><code>math.type(x)</code></td><td>does not exist (nil / error)</td><td><code>"integer"</code> / <code>"float"</code> / <code>nil</code></td></tr>
+  <tr><td><code>print(1.0)</code></td><td>prints <code>1</code></td><td>prints <code>1.0</code></td></tr>
+</table>
+
+<h2>Operators that diverge</h2>
+<table>
+  <tr><th>You write</th><th>Neovim 5.1</th><th>Hyprland 5.4</th></tr>
+  <tr><td><code>10 / 2</code></td><td><code>5</code> (a float)</td><td><code>5.0</code> (always float)</td></tr>
+  <tr><td><code>7 // 2</code></td><td><strong>syntax error</strong></td><td><code>3</code> (floor division)</td></tr>
+  <tr><td><code>2 ^ 3</code></td><td><code>8</code></td><td><code>8.0</code> (<code>^</code> is always float)</td></tr>
+  <tr><td><code>5 &amp; 3</code> (bitwise)</td><td><strong>syntax error</strong></td><td><code>1</code> (native bitwise)</td></tr>
+  <tr><td>bitwise AND</td><td><code>bit.band(5, 3)</code></td><td><code>5 &amp; 3</code> or <code>bit</code> n/a</td></tr>
+</table>
+
+<h2>Write-once, runs-in-both idioms</h2>
+<pre><code><span class="c-comment">-- floor division that works in BOTH versions:</span>
+<span class="c-key">local</span> q = math.floor(a / b)
+
+<span class="c-comment">-- force a float-looking result everywhere: just use / (never //)</span>
+<span class="c-key">local</span> ratio = w / h
+
+<span class="c-comment">-- integer-ness you can trust only on 5.4; on 5.1 guard it:</span>
+<span class="c-key">if</span> math <span class="c-key">and</span> math.type <span class="c-key">then</span> ... <span class="c-key">end</span>   <span class="c-comment">-- 5.4-only branch</span></code></pre>
+
+<div class="version">
+  <strong>Mental model.</strong> <span class="tag tag-hypr">5.4</span> numbers behave like <strong>Python 3</strong>:
+  <code>/</code> is float division, <code>//</code> is floor division, integers and floats are distinct.
+  <span class="tag tag-nvim">5.1</span> has <strong>one float type</strong> and no <code>//</code> at all — closer to JavaScript's single number type.
+  The safe habit: avoid <code>//</code> and native bitwise unless the code is Hyprland-only.
+</div>
+
+<div class="lesson-nav">
+  <a href="../lessons/0002-numbers-one-type-or-two.html">← Lesson 02: Numbers — one type, or two?</a>
+  <a href="https://www.lua.org/manual/5.4/manual.html#3.4.3">Lua 5.4 manual §3.4.3: Arithmetic →</a>
+</div>
+
+</body>
+</html>
