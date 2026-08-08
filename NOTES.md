@@ -13,6 +13,11 @@
 - APIs appear only to pin the version: **Neovim = LuaJIT / Lua 5.1**, **Hyprland 0.55+ = Lua 5.4**.
 - Do NOT edit real configs in this project. All practice stays inside lessons.
 
+## Link presentation
+- When giving the user clickable links to lessons/reference/assets, prefix with
+  **`file:///home/graham/Code/learning/teach-lua/`** (their real path), NOT the
+  container's `/workspace/`. E.g. `file:///home/graham/Code/learning/teach-lua/lessons/0001-values-nil-and-truthiness.html`.
+
 ## Teaching style
 - Fast, contrast-driven. Lead with the gotcha, not the happy path.
 - Every lesson flags **5.1 vs 5.4 divergence** where it exists (this is a mission through-line).
