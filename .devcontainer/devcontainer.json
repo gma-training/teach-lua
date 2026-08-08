@@ -14,7 +14,7 @@
 	],
 	"remoteUser": "node",
 	"mounts": [
-		"source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume"
+		"source=claude-code-config,target=/home/node/.claude,type=volume"
 	],
 
 	// Set environment variables within the container
