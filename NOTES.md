@@ -2,10 +2,23 @@
 
 ## Learner profile
 - Fluent in **Python, Ruby, shell**. Real programmer — do NOT teach programming fundamentals (variables, loops, functions as concepts). Teach *Lua's* versions of them, by contrast.
+- Also **familiar with JavaScript** and uses it frequently, but is **not** expert-level in JS
+  types/data structures the way they are in Python/Ruby. So: don't lean on JS for precise/subtle
+  type behaviour, but DO call out — as a secondary anchor — the places where **Lua resembles JS
+  more than Python/Ruby**. These build the right mental model:
+  - **Numbers**: JS has one number type (double). That's exactly **Lua 5.1** ("everything is a
+    float"). Good anchor for the 5.1 side; 5.4's integer/float split is the departure.
+  - **Forgiving reads**: `obj.missing` → `undefined` in JS, never an error — matches Lua's
+    `nil`-on-missing (Python raises `KeyError`/`AttributeError`; Ruby only for hashes).
+  - **Global-by-default**: sloppy-mode JS assignment without `var`/`let` leaks a global — same
+    trap as Lua's bare name (though JS strict mode errors instead of silently doing it).
+  - **First-class functions / closures everywhere**: config idioms lean on this the JS way.
+  - JS is a truthiness **mismatch** like Python (`0`, `""` falsy) — so keep Ruby as the truthiness
+    anchor, and flag JS alongside Python as the cautionary contrast, not the model.
 - Best anchors:
   - **Ruby** for truthiness (only `nil`/`false` are falsy — identical to Lua) and for `nil`.
-  - **Python** as the *contrast* case for truthiness (Python treats `0`/`""`/`[]` as falsy; Lua does NOT).
-  - **Python dict + list fused** for the Lua table.
+  - **Python** (and **JavaScript**) as the *contrast* case for truthiness (both treat `0`/`""` as falsy; Lua does NOT).
+  - **Python dict + list fused** for the Lua table (JS object ≈ the string-keyed half).
   - **Shell** for the global-by-default variable gotcha (shell vars are global too — familiar pain).
 
 ## Hard scope
