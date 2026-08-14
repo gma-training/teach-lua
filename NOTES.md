@@ -47,6 +47,14 @@
 - Tight feedback loops: "predict the output" beats "read the fact".
 - Quiz answers must be uniform length/format (no formatting tells).
 
+## Lesson roadmap (agreed)
+- L01 ✓ Values, `local`, `nil`, truthiness
+- L02 ✓ Numbers (first 5.1/5.4 divergence)
+- L03 ✓ Tables — the only data structure
+- L04 → Control flow & iteration (`if`/`for`, `pairs` vs `ipairs`) — depends on tables, so precedes strings
+- L05 → Strings & the `:` method call
+- (Later, from divergence backlog: `goto`, integer `for` behaviour, bitwise, etc.)
+
 ## Version-divergence backlog (5.1 vs 5.4) — teach explicitly when reached
 - Numbers: 5.1 all doubles; 5.4 has integer/float subtypes, `math.type`.
 - `//` floor division: 5.4 only.
