@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Tables</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Reference card</span>
+</div>
+
+<h1>Tables: the one data structure</h1>
+<p class="subtitle">The card to reach for when a wall of braces stops making sense.</p>
+
+<h2>Building &amp; indexing</h2>
+<table>
+  <tr><th>You write</th><th>What it is</th></tr>
+  <tr><td><code>{ 10, 20, 30 }</code></td><td>array part — keys <code>1</code>, <code>2</code>, <code>3</code> (<strong>1-based</strong>)</td></tr>
+  <tr><td><code>{ width = 80 }</code></td><td>hash part — string key <code>"width"</code></td></tr>
+  <tr><td><code>{ "a", tag = "x" }</code></td><td>both: key <code>1</code> = <code>"a"</code>, key <code>"tag"</code> = <code>"x"</code></td></tr>
+  <tr><td><code>t.width</code></td><td>sugar for <code>t["width"]</code> (identifier keys only)</td></tr>
+  <tr><td><code>t["max-width"]</code>, <code>t[1]</code></td><td>brackets required (non-identifier / numeric keys)</td></tr>
+  <tr><td><code>t.missing</code></td><td><code>nil</code> — a missing read never errors</td></tr>
+  <tr><td><code>t.width = nil</code></td><td><strong>deletes</strong> the key (not "sets to nil")</td></tr>
+</table>
+
+<h2>Length, holes &amp; unpack — where versions diverge</h2>
+<table>
+  <tr><th>&nbsp;</th><th>Lua 5.1</th><th>Lua 5.4</th></tr>
+  <tr><td><code>#t</code> on a dense sequence</td><td>the count</td><td>the count</td></tr>
+  <tr><td><code>#t</code> with a <code>nil</code> hole</td><td colspan="2"><strong>undefined in both</strong> — any border of the gap; 5.1 and 5.4 can differ</td></tr>
+  <tr><td>spread a sequence</td><td><code>unpack(t)</code> (global)</td><td><code>table.unpack(t)</code> (moved in 5.2)</td></tr>
+</table>
+
+<h2>Write-once, runs-in-both idioms</h2>
+<pre><code><span class="c-comment">-- unpack that works on both versions:</span>
+<span class="c-key">local</span> unpack = table.unpack <span class="c-key">or</span> unpack
+unpack(rgb)
+
+<span class="c-comment">-- keep sequences dense: rebuild rather than nil-ing a middle slot,</span>
+<span class="c-comment">-- so # and ipairs stay trustworthy.</span></code></pre>
+
+<div class="version">
+  <strong>Mental model.</strong> One table does <strong>Python <code>dict</code> + <code>list</code></strong>
+  fused; the hash half is a <strong>JavaScript object</strong> and dot/bracket access works the JS way.
+  It's <strong>1-based</strong> (unlike all of Python/JS/Ruby). The two real
+  <span class="tag tag-51">5.1</span> / <span class="tag tag-54">5.4</span> traps: <code>#</code> is
+  unspecified on holey tables, and unpack is <code>unpack</code> (5.1) vs <code>table.unpack</code> (5.4).
+</div>
+
+<div class="lesson-nav">
+  <a href="../lessons/0003-tables-the-only-data-structure.html">← Lesson 03: Tables — the only data structure</a>
+  <a href="https://www.lua.org/manual/5.4/manual.html#3.4.9">Lua 5.4 manual §3.4.9: The Length Operator →</a>
+</div>
+
+</body>
+</html>

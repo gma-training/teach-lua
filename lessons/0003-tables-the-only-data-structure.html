@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 03 · Tables — the only data structure</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/quiz.js"></script>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Lesson 03</span>
+</div>
+
+<h1>Tables: the only data structure</h1>
+<p class="subtitle">Lua has exactly one container, and a config file is nothing but that container nested inside itself. Learn the table and you can read the <em>shape</em> of any config.</p>
+
+<p>Lua gives you <strong>one</strong> compound type: the <code>table</code>. It does the job that
+Python splits across <code>dict</code>, <code>list</code>, and object, and that Ruby splits across
+<code>Hash</code> and <code>Array</code>. Everything structured in a config — options, nested
+groups, lists of keymaps — is a table. There is no separate list type to learn. Master the four
+things below and the wall of braces in any <code>init.lua</code> or <code>hyprland.lua</code>
+resolves into a shape you can read.</p>
+
+<h2>One constructor, two shapes</h2>
+<p>The braces <code>{ }</code> build every table. Give it positional values and you get an
+<em>array-like</em> part (keys <code>1, 2, 3…</code>); give it <code>key = value</code> pairs and you
+get a <em>hash-like</em> part. You can mix both in one literal.</p>
+
+<pre><code><span class="c-key">local</span> list = { <span class="c-num">10</span>, <span class="c-num">20</span>, <span class="c-num">30</span> }            <span class="c-comment">-- array part: keys 1, 2, 3</span>
+<span class="c-key">local</span> opts = { width = <span class="c-num">80</span>, wrap = <span class="c-key">true</span> }   <span class="c-comment">-- hash part: string keys</span>
+<span class="c-key">local</span> mix  = { <span class="c-str">"a"</span>, <span class="c-str">"b"</span>, tag = <span class="c-str">"x"</span> }      <span class="c-comment">-- both at once</span></code></pre>
+
+<div class="anchor">
+  Think <strong>Python's <code>dict</code> and <code>list</code> fused into one thing</strong>. The
+  closest single-structure cousin is the <strong>JavaScript object</strong>: <code>{ width: 80 }</code>
+  in JS maps almost 1:1 onto Lua's hash part. The difference: JS keeps a separate <code>Array</code>,
+  whereas Lua folds the array <em>into</em> the same table as integer keys.
+</div>
+
+<div class="gotcha">
+  <strong>Tables are 1-based.</strong> The first array element is <code>t[1]</code>, not
+  <code>t[0]</code>. Every other language you know — Python, JS, Ruby — counts from 0. In Lua the
+  sequence <code>{ 10, 20, 30 }</code> occupies keys <code>1</code>, <code>2</code>, <code>3</code>.
+  <code>t[0]</code> is just an ordinary key that nobody set, so it reads as <code>nil</code>.
+</div>
+
+<div class="quiz" data-answer="1">
+  <p class="q">For <code>local t = { 10, 20, 30 }</code>, what does <code>t[0]</code> evaluate to?</p>
+  <button>the value 10, the first item</button>
+  <button>the value nil, no such key</button>
+  <button>the value 30, the last item</button>
+  <button>an out-of-range error</button>
+  <p class="why" hidden>The literal filled keys <code>1</code>, <code>2</code>, <code>3</code>. Key
+  <code>0</code> was never assigned, and reading a missing key is never an error in Lua — it just
+  returns <code>nil</code> (Lesson 01). The first element lives at <code>t[1]</code>.</p>
+</div>
+
+<h2>Two ways to write a key — and they're identical</h2>
+<p>For a string key that looks like an identifier, <code>t.width</code> is pure sugar for
+<code>t["width"]</code>. They compile to the same access. But a key that <em>isn't</em>
+identifier-shaped — a hyphen, a leading digit, a number, a boolean — can only be reached with
+brackets.</p>
+
+<pre><code>opts.width          <span class="c-comment">-- sugar</span>
+opts[<span class="c-str">"width"</span>]       <span class="c-comment">-- exactly the same access</span>
+opts[<span class="c-str">"line-count"</span>]  <span class="c-comment">-- MUST use brackets (hyphen isn't an identifier)</span>
+list[<span class="c-num">1</span>]            <span class="c-comment">-- numeric keys are always brackets</span></code></pre>
+
+<div class="anchor">
+  This dot-vs-bracket duality is <strong>JavaScript, not Python/Ruby</strong>. JS has exactly the same
+  <code>obj.width</code> / <code>obj["width"]</code> pair and the same "use brackets for
+  <code>obj["max-width"]</code>" rule. Python (<code>d["width"]</code>) and Ruby
+  (<code>h[:width]</code>) only offer the bracket form for their hashes. If you already reach for
+  brackets-on-weird-keys in JS, that instinct is correct here.
+</div>
+
+<h2>Missing key is nil; assigning nil deletes</h2>
+<p>Reading a key that was never set returns <code>nil</code> — the same forgiving read from Lesson 01,
+now on tables. The flip side is the surprise: writing <code>nil</code> into a key doesn't store
+<code>nil</code>, it <strong>removes the key</strong>.</p>
+
+<pre><code><span class="c-key">local</span> cfg = { width = <span class="c-num">80</span> }
+print(cfg.height)   <span class="c-comment">--> nil   (no KeyError, no undefined-is-a-value quirk)</span>
+cfg.width = <span class="c-key">nil</span>     <span class="c-comment">-- the key "width" is now GONE, not set to nil</span></code></pre>
+
+<div class="anchor">
+  The read side matches <strong>JavaScript</strong> closely: <code>obj.missing</code> gives
+  <code>undefined</code> rather than throwing, just as Lua gives <code>nil</code>. The mental
+  difference: JS actually stores <code>undefined</code>/<code>null</code> as values, whereas in Lua
+  "the key holds <code>nil</code>" and "the key does not exist" are the <em>same state</em> — which is
+  why assigning <code>nil</code> deletes.
+</div>
+
+<h2>Length with <code>#</code>, and the hole trap</h2>
+<p>The <code>#</code> operator gives the length of the array part of a table. On a dense sequence
+(keys <code>1..n</code> with no gaps) it's exactly what you expect.</p>
+
+<pre><code><span class="c-key">local</span> t = { <span class="c-num">10</span>, <span class="c-num">20</span>, <span class="c-num">30</span> }
+print(#t)   <span class="c-comment">--> 3</span></code></pre>
+
+<p>But punch a <code>nil</code> hole in the middle and <code>#</code> is no longer trustworthy — it may
+return <em>any</em> border of the gap.</p>
+
+<pre><code>t[<span class="c-num">2</span>] = <span class="c-key">nil</span>       <span class="c-comment">-- now the sequence has a hole at key 2</span>
+print(#t)     <span class="c-comment">-- may print 3, or 1 — it is UNDEFINED</span></code></pre>
+
+<div class="version">
+  The result of <code>#</code> on a table with holes is <strong>unspecified in both</strong>
+  <span class="tag tag-51">Lua 5.1</span> and <span class="tag tag-54">Lua 5.4</span> — the manual only
+  promises a meaningful length for a <em>border-free sequence</em>. The two versions use different
+  internal length algorithms, so the same holey table can genuinely report a different <code>#</code>
+  under each. <strong>Rule:</strong> keep sequences dense (no <code>nil</code> in the middle), and
+  when you need to drop an item, rebuild the list rather than nil-ing a slot. Note too that
+  <code>ipairs</code> stops at the first <code>nil</code>, so it and <code>#</code> agree on
+  clean sequences and both mislead on holey ones.
+</div>
+
+<div class="quiz" data-answer="3">
+  <p class="q">After <code>local t = {10,20,30}; t[2] = nil</code>, what may <code>#t</code> return?</p>
+  <button>exactly 3, on every Lua</button>
+  <button>exactly 2, on every Lua</button>
+  <button>exactly 1, on every Lua</button>
+  <button>either 3 or 1, it is undefined</button>
+  <p class="why" hidden>A <code>nil</code> in the middle makes this a non-sequence, and <code>#</code> on a
+  non-sequence is unspecified — it may report either border of the hole, and 5.1 and 5.4 can differ.
+  Never rely on <code>#</code> once a table has holes.</p>
+</div>
+
+<h2>Unpacking a table — the second divergence</h2>
+<p>Spreading a sequence into separate values (for a call, or multiple assignment) uses a function
+whose <em>name moved</em> between versions.</p>
+
+<pre><code><span class="c-key">local</span> rgb = { <span class="c-num">255</span>, <span class="c-num">128</span>, <span class="c-num">0</span> }
+<span class="c-comment">-- Lua 5.1:  unpack(rgb)          (a global)</span>
+<span class="c-comment">-- Lua 5.4:  table.unpack(rgb)    (moved into the table library in 5.2)</span></code></pre>
+
+<div class="version">
+  <span class="tag tag-51">Lua 5.1</span> exposes a global <code>unpack</code>.
+  <span class="tag tag-54">Lua 5.4</span> removed that global and provides
+  <code>table.unpack</code> instead. Calling <code>table.unpack</code> on 5.1 errors (no such field);
+  calling bare <code>unpack</code> on 5.4 errors (it's a <code>nil</code> global). The portable line
+  that runs on both: <code>local unpack = table.unpack or unpack</code>, then call
+  <code>unpack(rgb)</code>.
+</div>
+
+<div class="reveal">
+  <p class="q">Predict all three printed lines, then reveal.</p>
+<pre><code><span class="c-key">local</span> m = { <span class="c-str">"red"</span>, <span class="c-str">"green"</span>, tag = <span class="c-str">"warn"</span> }
+print(#m)
+print(m.tag)
+print(m[<span class="c-num">3</span>])</code></pre>
+  <button class="reveal-btn">Reveal answer</button>
+  <div class="answer" hidden>
+    <p><code>#m</code> → <strong><code>2</code></strong>. Only <code>"red"</code> and <code>"green"</code>
+    occupy the array part (keys <code>1</code> and <code>2</code>); <code>tag</code> is a string key and
+    lives in the hash part, which <code>#</code> ignores.</p>
+    <p><code>m.tag</code> → <strong><code>warn</code></strong>. The dotted access reads the string key.</p>
+    <p><code>m[3]</code> → <strong><code>nil</code></strong>. Nothing was assigned to numeric key
+    <code>3</code>; <code>tag = "warn"</code> set the key <code>"tag"</code>, not <code>3</code>.</p>
+  </div>
+</div>
+
+<h2>Tables are references</h2>
+<p>A table value is a <em>reference</em>. Assigning it to another name doesn't copy — both names point
+at the one table. And <code>==</code> compares identity, not contents.</p>
+
+<pre><code><span class="c-key">local</span> a = { <span class="c-num">1</span>, <span class="c-num">2</span> }
+<span class="c-key">local</span> b = a
+b[<span class="c-num">1</span>] = <span class="c-num">99</span>
+print(a[<span class="c-num">1</span>])        <span class="c-comment">--> 99   (a and b are the same table)</span>
+print({<span class="c-num">1</span>} == {<span class="c-num">1</span>})  <span class="c-comment">--> false (two different tables, same contents)</span></code></pre>
+
+<div class="anchor">
+  No surprise here — this is exactly Python's list/dict aliasing (<code>b = a</code> then mutate),
+  Ruby's object references, and JavaScript's objects/arrays. Your instinct from all three transfers
+  unchanged: to actually copy a table you must build a new one and copy the entries in.
+</div>
+
+<h2>Putting it together: a config is nested tables</h2>
+<p>That's the whole point. Every config you'll read is one outer table whose values are more tables,
+freely mixing the array and hash shapes:</p>
+
+<pre><code><span class="c-key">local</span> config = {
+  width = <span class="c-num">80</span>,
+  wrap  = <span class="c-key">true</span>,
+  keymaps = {                       <span class="c-comment">-- an array of arrays</span>
+    { <span class="c-str">"n"</span>, <span class="c-str">"&lt;leader&gt;w"</span>, <span class="c-str">"save"</span> },
+    { <span class="c-str">"n"</span>, <span class="c-str">"&lt;leader&gt;q"</span>, <span class="c-str">"quit"</span> },
+  },
+  colors = { fg = <span class="c-str">"#eee"</span>, bg = <span class="c-str">"#111"</span> },  <span class="c-comment">-- a hash</span>
+}
+
+print(config.keymaps[<span class="c-num">1</span>][<span class="c-num">2</span>])   <span class="c-comment">--> &lt;leader&gt;w</span>
+print(config.colors.bg)        <span class="c-comment">--> #111</span></code></pre>
+
+<p>Read that chain left to right: <code>config</code> is a table, <code>.keymaps</code> is the array
+inside it, <code>[1]</code> is its first entry (another array), <code>[2]</code> is that array's second
+slot. No new syntax — just the four rules above, nested. This is config-scale Lua in full.</p>
+
+<div class="source">
+  Primary: <a href="https://www.lua.org/manual/5.4/manual.html#3.4.9">Lua 5.4 Reference Manual §3.4.9 "The Length Operator"</a>
+  for the exact <code>#</code>/sequence definition, and
+  <a href="https://www.lua.org/pil/2.5.html">Programming in Lua §2.5 "Tables"</a> for the
+  one-structure model in the language author's own words.
+</div>
+
+<div class="ask">
+  I'm your teacher — good things to fire back: <em>"show me a config bug caused by a <code>nil</code>
+  hole and <code>#</code>,"</em> or <em>"how do I actually loop over the hash part vs the array part?"</em>
+  (That's the next lesson: <code>pairs</code> vs <code>ipairs</code>.)
+</div>
+
+<h3>Retrieval check (from memory, no scrolling)</h3>
+<ol>
+  <li>What index holds the first element of <code>{ "a", "b", "c" }</code>?</li>
+  <li>Write two spellings of the same access to the <code>width</code> key of table <code>t</code>.</li>
+  <li>What happens to the key when you assign <code>t.width = nil</code>?</li>
+  <li>Why is <code>#t</code> untrustworthy after you set a middle key to <code>nil</code>?</li>
+  <li>Which language — Python or JavaScript — is the better model for Lua's dot/bracket key access?</li>
+</ol>
+
+<div class="lesson-nav">
+  <a href="0002-numbers-one-type-or-two.html">← Lesson 02</a>
+  <a href="../reference/tables.html">📇 Reference: Tables</a>
+  <span>Next → Control flow &amp; iteration (<code>pairs</code> / <code>ipairs</code>)</span>
+</div>
+
+</body>
+</html>

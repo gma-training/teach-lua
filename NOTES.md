@@ -52,5 +52,5 @@
 - `//` floor division: 5.4 only.
 - Bitwise `& | ~ << >>`: 5.4 native; 5.1 uses LuaJIT `bit` library.
 - `goto`/labels: 5.2+ (LuaJIT 2.1 also has it); not stock 5.1.
-- `unpack` (5.1 global) vs `table.unpack` (5.2+).
-- Integer `for` loop behaviour and `#` on tables with holes.
+- `unpack` (5.1 global) vs `table.unpack` (5.2+). — *covered L03*
+- Integer `for` loop behaviour and `#` on tables with holes. — `#`-with-holes *covered L03*; integer `for` still open.
