@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 04 · Control flow &amp; iteration</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/quiz.js"></script>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Lesson 04</span>
+</div>
+
+<h1>Control flow &amp; iteration</h1>
+<p class="subtitle">The <code>if</code>s and loops are the easy part — the traps are the exact keywords, an <em>inclusive</em> <code>for</code> range, and the fact that <code>pairs</code> hands you keys in no particular order.</p>
+
+<p>You know branching and looping cold in three languages. So this lesson is only about where
+Lua's spelling and semantics differ — the keywords it insists on, the one range convention that
+counts differently from Python, and the two table-walking functions you'll use in every config.
+Truthiness (Lesson 01) and tables (Lesson 03) are the ground this stands on.</p>
+
+<h2><code>if</code> wants <code>then</code> and <code>end</code></h2>
+<p>No colons, no braces, no significant indentation. A conditional opens with <code>then</code> and the
+whole thing closes with <code>end</code>. "Else if" is the single word <code>elseif</code>.</p>
+
+<pre><code><span class="c-key">if</span> opts.wrap <span class="c-key">then</span>
+  mode = <span class="c-str">"soft"</span>
+<span class="c-key">elseif</span> opts.width &gt; <span class="c-num">100</span> <span class="c-key">then</span>
+  mode = <span class="c-str">"wide"</span>
+<span class="c-key">else</span>
+  mode = <span class="c-str">"default"</span>
+<span class="c-key">end</span></code></pre>
+
+<div class="anchor">
+  Four keyword tells against what you already type: it's <code>elseif</code> (one word), not Python's
+  <code>elif</code>, Ruby's <code>elsif</code>, or JS's <code>else if</code>. It's <code>~=</code> for
+  "not equal" (Lesson 01), never <code>!=</code>. The condition needs no parentheses. And indentation
+  is cosmetic — only <code>then</code>/<code>end</code> delimit the block. The condition follows Lua
+  truthiness: only <code>nil</code>/<code>false</code> skip the branch, so <code>if opts.width then</code>
+  runs even when <code>width</code> is <code>0</code>.
+</div>
+
+<h2>There is no ternary — <code>and</code>/<code>or</code> stands in</h2>
+<p>Lua has no <code>a ? b : c</code>. The idiom is <code>cond and a or b</code>, leaning on the
+short-circuit return values from Lesson 01. It's the same trick as Python's old
+<code>a if cond else b</code> workaround.</p>
+
+<pre><code><span class="c-key">local</span> width = opts.wide <span class="c-key">and</span> <span class="c-num">120</span> <span class="c-key">or</span> <span class="c-num">80</span>   <span class="c-comment">-- wide? 120 : 80</span></code></pre>
+
+<div class="gotcha">
+  The idiom silently breaks when the "true" branch is itself falsy. In
+  <code>local x = flag and false or true</code>, when <code>flag</code> is truthy you still get
+  <code>true</code> — because <code>and</code> yielded <code>false</code>, so <code>or</code> moved on to
+  its right side. Only use <code>cond and a or b</code> when <code>a</code> can never be
+  <code>nil</code>/<code>false</code>. When it can, write a real <code>if</code>.
+</div>
+
+<h2>The numeric <code>for</code> counts <em>inclusively</em></h2>
+<p><code>for i = start, stop do … end</code> runs with <code>i</code> taking every value from
+<code>start</code> to <code>stop</code> — <strong>including <code>stop</code></strong>. An optional third
+number is the step.</p>
+
+<pre><code><span class="c-key">for</span> i = <span class="c-num">1</span>, <span class="c-num">3</span> <span class="c-key">do</span> io.write(i) <span class="c-key">end</span>      <span class="c-comment">--> 123   (1, 2, AND 3)</span>
+<span class="c-key">for</span> i = <span class="c-num">10</span>, <span class="c-num">1</span>, <span class="c-num">-1</span> <span class="c-key">do</span> … <span class="c-key">end</span>       <span class="c-comment">-- countdown with a step of -1</span></code></pre>
+
+<div class="anchor">
+  This is the opposite convention to <strong>Python's <code>range(1, 3)</code></strong>, which stops
+  <em>before</em> 3, and unlike a C/JS <code>for (i = 1; i &lt; 3; i++)</code> with its <code>&lt;</code>.
+  The upside: because tables are 1-based (Lesson 03), <code>for i = 1, #t do</code> walks exactly keys
+  <code>1</code> through <code>#t</code> with no off-by-one — start and end both line up with the table.
+</div>
+
+<div class="version">
+  In <span class="tag tag-54">Lua 5.4</span>, when <code>start</code>, <code>stop</code>, and the step are
+  all integers the loop variable is an <em>integer</em> — so <code>for i = 1, #t</code> gives integer
+  indices (<code>#t</code> is an integer), ideal for array work. Make any bound a float and the
+  variable turns float: <code>for i = 1.0, 3</code> yields <code>1.0 2.0 3.0</code>. In
+  <span class="tag tag-51">Lua 5.1</span> there are no subtypes, so <code>i</code> is always a float and
+  just prints as <code>1 2 3</code>. Practical rule: keep loop bounds integer literals (or <code>#t</code>)
+  when the counter is a table index. (5.4 also computes the iteration count up front, dodging the
+  counter-overflow infinite loop that huge bounds can cause on 5.1 — rarely relevant at config scale.)
+</div>
+
+<div class="quiz" data-answer="0">
+  <p class="q">How many times does the body of <code>for i = 1, 3 do … end</code> run?</p>
+  <button>three times — bounds are inclusive</button>
+  <button>two times — like Python range(1, 3)</button>
+  <button>four times — counts 0 through 3</button>
+  <button>forever — a step is required</button>
+  <p class="why" hidden>Lua's numeric <code>for</code> includes the end value, so <code>i</code> is
+  <code>1</code>, <code>2</code>, <code>3</code> — three iterations. Python's <code>range(1, 3)</code>
+  stops before 3; Lua does not. The step defaults to <code>1</code> when omitted.</p>
+</div>
+
+<h2><code>pairs</code> vs <code>ipairs</code> — walking a table</h2>
+<p>The generic <code>for … in</code> drives an iterator. Two come built in, and choosing wrong is a
+classic config bug.</p>
+
+<pre><code><span class="c-comment">-- ipairs: the ARRAY part only, keys 1,2,3… IN ORDER, STOPS at the first nil</span>
+<span class="c-key">for</span> i, v <span class="c-key">in</span> ipairs(list) <span class="c-key">do</span> print(i, v) <span class="c-key">end</span>
+
+<span class="c-comment">-- pairs: EVERY key (array + hash), order UNSPECIFIED</span>
+<span class="c-key">for</span> k, v <span class="c-key">in</span> pairs(opts) <span class="c-key">do</span> print(k, v) <span class="c-key">end</span></code></pre>
+
+<div class="gotcha">
+  <code>pairs</code> gives <strong>no order guarantee</strong> — not insertion order, not sorted order.
+  This bites Python and Ruby brains hard: both languages iterate hashes in insertion order, so code
+  that "just happened to come out in order" there will come out scrambled here, and can differ run to
+  run. If you need a stable order, collect the keys into a sequence and <code>table.sort</code> them, or
+  use <code>ipairs</code> over an explicit array. Also recall Lesson 03: <code>ipairs</code> stops at the
+  first <code>nil</code>, so a hole hides every later element from it.
+</div>
+
+<div class="quiz" data-answer="0">
+  <p class="q">What can you rely on about the order in which <code>pairs(t)</code> yields keys?</p>
+  <button>nothing — the order is unspecified</button>
+  <button>insertion order, as in Python 3</button>
+  <button>ascending sorted-key order</button>
+  <button>array keys first, then the rest</button>
+  <p class="why" hidden>The Lua manual specifies no order for <code>pairs</code>, and it can even vary
+  between runs. Unlike Python 3 dicts and Ruby hashes (both insertion-ordered), you must sort keys
+  yourself or iterate an explicit sequence when order matters.</p>
+</div>
+
+<h2><code>while</code> and <code>repeat</code></h2>
+<p>Two more loops, rarely needed in configs but worth recognising. <code>while</code> tests first;
+<code>repeat … until</code> tests <em>after</em> the body (so it always runs at least once) and — unusually
+— its condition can see locals declared inside the body.</p>
+
+<pre><code><span class="c-key">while</span> queue.pending <span class="c-key">do</span> step() <span class="c-key">end</span>
+
+<span class="c-key">repeat</span>
+  <span class="c-key">local</span> line = read()
+<span class="c-key">until</span> line == <span class="c-key">nil</span>          <span class="c-comment">-- note: the UNTIL is the EXIT test, and sees `line`</span></code></pre>
+
+<div class="anchor">
+  <code>repeat … until cond</code> is a do-while, but watch the sense: the condition is when to
+  <strong>stop</strong>, the mirror image of <code>while</code>'s "keep going while true." Ruby's
+  <code>begin … end until</code> is the same idea; Python has no direct equivalent.
+</div>
+
+<div class="reveal">
+  <p class="q">Predict the printed number, then reveal.</p>
+<pre><code><span class="c-key">local</span> t = { <span class="c-str">"a"</span>, <span class="c-str">"b"</span>, <span class="c-key">nil</span>, <span class="c-str">"d"</span> }
+<span class="c-key">local</span> n = <span class="c-num">0</span>
+<span class="c-key">for</span> _ <span class="c-key">in</span> ipairs(t) <span class="c-key">do</span> n = n + <span class="c-num">1</span> <span class="c-key">end</span>
+print(n)</code></pre>
+  <button class="reveal-btn">Reveal answer</button>
+  <div class="answer" hidden>
+    <p><strong><code>2</code></strong>. <code>ipairs</code> walks <code>1</code>, <code>2</code>, then hits
+    the <code>nil</code> at key <code>3</code> and stops — <code>"d"</code> at key <code>4</code> is never
+    seen. This holds on both 5.1 and 5.4.</p>
+    <p>Contrast: <code>pairs(t)</code> <em>would</em> visit <code>"d"</code> (it walks all real keys,
+    including <code>4</code>), just in no guaranteed order. That gap between the two iterators is
+    exactly the hole trap from Lesson 03.</p>
+  </div>
+</div>
+
+<h2>Putting it together</h2>
+<p>The two iterators against the nested config from Lesson 03 — <code>ipairs</code> for the list of
+keymaps, <code>pairs</code> for the option hash:</p>
+
+<pre><code><span class="c-key">for</span> _, map <span class="c-key">in</span> ipairs(config.keymaps) <span class="c-key">do</span>
+  print(map[<span class="c-num">1</span>], map[<span class="c-num">2</span>], map[<span class="c-num">3</span>])   <span class="c-comment">-- each map is a 3-item array</span>
+<span class="c-key">end</span>
+
+<span class="c-key">for</span> key, value <span class="c-key">in</span> pairs(config.colors) <span class="c-key">do</span>
+  print(key, value)                <span class="c-comment">-- fg/bg, in SOME order</span>
+<span class="c-key">end</span></code></pre>
+
+<div class="source">
+  Primary: <a href="https://www.lua.org/manual/5.4/manual.html#3.3.5">Lua 5.4 Reference Manual §3.3.5 "For Statement"</a>
+  for the numeric/generic <code>for</code> and its integer rules, and
+  <a href="https://www.lua.org/manual/5.4/manual.html#pdf-next">§6.1 on <code>next</code>/<code>pairs</code></a>
+  for why <code>pairs</code> has no defined order.
+</div>
+
+<div class="ask">
+  I'm your teacher — worth asking: <em>"show me how to iterate a config hash in sorted order,"</em> or
+  <em>"when would I ever pick <code>while</code> over a <code>for</code> in a config?"</em> (Honest answer
+  to the second: almost never — configs are declarative, so <code>ipairs</code>/<code>pairs</code> cover
+  nearly everything.)
+</div>
+
+<h3>Retrieval check (from memory, no scrolling)</h3>
+<ol>
+  <li>What two keywords open and close an <code>if</code>, and how do you spell "else if"?</li>
+  <li>How many iterations does <code>for i = 0, 4 do … end</code> run?</li>
+  <li>Which iterator stops at the first <code>nil</code>, and which sees every key?</li>
+  <li>What order does <code>pairs</code> guarantee?</li>
+  <li>Rewrite the ternary <code>flag ? "on" : "off"</code> as a Lua expression.</li>
+</ol>
+
+<div class="lesson-nav">
+  <a href="0003-tables-the-only-data-structure.html">← Lesson 03</a>
+  <a href="../reference/control-flow.html">📇 Reference: Control flow &amp; iteration</a>
+  <span>Next → Strings &amp; the <code>:</code> method call</span>
+</div>
+
+</body>
+</html>

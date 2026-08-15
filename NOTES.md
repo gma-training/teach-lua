@@ -51,9 +51,9 @@
 - L01 ✓ Values, `local`, `nil`, truthiness
 - L02 ✓ Numbers (first 5.1/5.4 divergence)
 - L03 ✓ Tables — the only data structure
-- L04 → Control flow & iteration (`if`/`for`, `pairs` vs `ipairs`) — depends on tables, so precedes strings
+- L04 ✓ Control flow & iteration (`if`/`for`, `pairs` vs `ipairs`)
 - L05 → Strings & the `:` method call
-- (Later, from divergence backlog: `goto`, integer `for` behaviour, bitwise, etc.)
+- (Later, from divergence backlog: `goto`, bitwise, etc.)
 
 ## Version-divergence backlog (5.1 vs 5.4) — teach explicitly when reached
 - Numbers: 5.1 all doubles; 5.4 has integer/float subtypes, `math.type`.
@@ -61,4 +61,4 @@
 - Bitwise `& | ~ << >>`: 5.4 native; 5.1 uses LuaJIT `bit` library.
 - `goto`/labels: 5.2+ (LuaJIT 2.1 also has it); not stock 5.1.
 - `unpack` (5.1 global) vs `table.unpack` (5.2+). — *covered L03*
-- Integer `for` loop behaviour and `#` on tables with holes. — `#`-with-holes *covered L03*; integer `for` still open.
+- Integer `for` loop behaviour and `#` on tables with holes. — `#`-with-holes *covered L03*; integer `for` *covered L04*.

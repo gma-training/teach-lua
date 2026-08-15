@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Control flow &amp; iteration</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Reference card</span>
+</div>
+
+<h1>Control flow &amp; iteration</h1>
+<p class="subtitle">The keywords Lua insists on, the inclusive range, and the two table-walkers.</p>
+
+<h2>Branching</h2>
+<pre><code><span class="c-key">if</span> cond <span class="c-key">then</span> … <span class="c-key">elseif</span> other <span class="c-key">then</span> … <span class="c-key">else</span> … <span class="c-key">end</span>
+
+<span class="c-comment">-- no ternary; the idiom (only when `a` is never nil/false):</span>
+<span class="c-key">local</span> x = cond <span class="c-key">and</span> a <span class="c-key">or</span> b</code></pre>
+<table>
+  <tr><th>You mean</th><th>Lua wants</th><th>Not</th></tr>
+  <tr><td>else if</td><td><code>elseif</code></td><td><code>elif</code> / <code>elsif</code> / <code>else if</code></td></tr>
+  <tr><td>not equal</td><td><code>~=</code></td><td><code>!=</code></td></tr>
+  <tr><td>block end</td><td><code>then</code> … <code>end</code></td><td>colons / braces / indentation</td></tr>
+</table>
+
+<h2>Loops</h2>
+<table>
+  <tr><th>Form</th><th>Notes</th></tr>
+  <tr><td><code>for i = 1, n do … end</code></td><td><strong>inclusive</strong> of <code>n</code> (unlike Python <code>range</code>); optional 3rd arg is the step, e.g. <code>10, 1, -1</code></td></tr>
+  <tr><td><code>for i, v in ipairs(t) do</code></td><td>array part, keys <code>1..</code>, in order, <strong>stops at first <code>nil</code></strong></td></tr>
+  <tr><td><code>for k, v in pairs(t) do</code></td><td>every key (array + hash), <strong>order unspecified</strong></td></tr>
+  <tr><td><code>while cond do … end</code></td><td>tests before the body</td></tr>
+  <tr><td><code>repeat … until cond</code></td><td>tests after (runs ≥ once); <code>cond</code> is the <em>exit</em> test and can see body locals</td></tr>
+</table>
+
+<h2>The two iterator traps</h2>
+<pre><code><span class="c-comment">-- pairs has NO order — sort keys yourself when it matters:</span>
+<span class="c-key">local</span> keys = {}
+<span class="c-key">for</span> k <span class="c-key">in</span> pairs(t) <span class="c-key">do</span> keys[#keys + <span class="c-num">1</span>] = k <span class="c-key">end</span>
+table.sort(keys)
+<span class="c-key">for</span> _, k <span class="c-key">in</span> ipairs(keys) <span class="c-key">do</span> print(k, t[k]) <span class="c-key">end</span>
+
+<span class="c-comment">-- ipairs stops at a hole: keep sequences dense (Lesson 03).</span></code></pre>
+
+<div class="version">
+  <strong>Mostly version-agnostic.</strong> One visible split: in
+  <span class="tag tag-54">Lua 5.4</span> an all-integer numeric <code>for</code> gives an
+  <strong>integer</strong> counter (so <code>for i = 1, #t</code> yields integer indices; a float bound
+  makes it float, printing <code>1.0 2.0 …</code>). In <span class="tag tag-51">Lua 5.1</span> there are no
+  subtypes, so the counter is always a float that prints as <code>1 2 …</code>. Keep loop bounds integer
+  literals or <code>#t</code> for table indexing. Branching, <code>pairs</code>/<code>ipairs</code>, and
+  the loop keywords are identical across versions.
+</div>
+
+<div class="lesson-nav">
+  <a href="../lessons/0004-control-flow-and-iteration.html">← Lesson 04: Control flow &amp; iteration</a>
+  <a href="https://www.lua.org/manual/5.4/manual.html#3.3.5">Lua 5.4 manual §3.3.5: For Statement →</a>
+</div>
+
+</body>
+</html>
