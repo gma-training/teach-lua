@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Strings</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Reference card</span>
+</div>
+
+<h1>Strings</h1>
+<p class="subtitle">Join, slice, format — and the colon that trips everyone once.</p>
+
+<h2>Core habits</h2>
+<table>
+  <tr><th>You write</th><th>What happens</th></tr>
+  <tr><td><code>"a" .. "b"</code></td><td>concatenation — <code>..</code>, never <code>+</code></td></tr>
+  <tr><td><code>"x=" .. 80</code></td><td><code>"x=80"</code> — number coerced to string</td></tr>
+  <tr><td><code>"10" + 5</code></td><td><code>15</code> — numeric string coerced to number (not JS's <code>"105"</code>)</td></tr>
+  <tr><td><code>s:upper()</code></td><td>method call — sugar for <code>string.upper(s)</code> (colon passes <code>self</code>)</td></tr>
+  <tr><td><code>s:sub(1, 4)</code></td><td>chars 1–4 <strong>inclusive</strong>, 1-based</td></tr>
+  <tr><td><code>s:sub(-4)</code></td><td>last 4 chars (negative counts from end)</td></tr>
+  <tr><td><code>#s</code></td><td>length in <strong>bytes</strong>, not characters</td></tr>
+</table>
+
+<h2>Literals</h2>
+<pre><code><span class="c-str">'single'</span> <span class="c-key">and</span> <span class="c-str">"double"</span>   <span class="c-comment">-- interchangeable; both take \n \t \\ escapes</span>
+[[ multiline,
+verbatim, no escapes ]]  <span class="c-comment">-- long bracket; drops one leading newline</span>
+[==[ text with ]] inside ]==]   <span class="c-comment">-- bump the level if the body contains ]]</span>
+<span class="c-comment">-- No interpolation: use .. or string.format instead of f"" / ${}</span></code></pre>
+
+<h2><code>string.format</code> (printf)</h2>
+<pre><code>string.format(<span class="c-str">"[%s] w=%d %02x"</span>, name, <span class="c-num">80</span>, <span class="c-num">15</span>)
+<span class="c-comment">-- %s string · %d integer · %x hex · %02d zero-pad · %f float · %q quoted</span></code></pre>
+
+<div class="version">
+  Two version notes. <strong>UTF-8:</strong> <span class="tag tag-54">Lua 5.4</span> has a
+  <code>utf8</code> library (<code>utf8.len</code> for real character counts);
+  <span class="tag tag-51">Lua 5.1</span> has none — only bytes via <code>#</code>.
+  <strong><code>%d</code>:</strong> on <span class="tag tag-54">5.4</span>, <code>string.format("%d", 3.5)</code>
+  <em>errors</em> (no integer representation); on <span class="tag tag-51">5.1</span> it truncates to
+  <code>"3"</code>. <code>math.floor</code> the value first to agree across both.
+</div>
+
+<div class="lesson-nav">
+  <a href="../lessons/0005-strings-and-the-method-call.html">← Lesson 05: Strings &amp; the : method call</a>
+  <a href="https://www.lua.org/manual/5.4/manual.html#6.4">Lua 5.4 manual §6.4: String Manipulation →</a>
+</div>
+
+</body>
+</html>

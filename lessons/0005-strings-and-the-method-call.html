@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 05 · Strings &amp; the : method call</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/quiz.js"></script>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Lesson 05</span>
+</div>
+
+<h1>Strings &amp; the <code>:</code> method call</h1>
+<p class="subtitle">Joining is <code>..</code> not <code>+</code>, methods hang off a colon, indices start at 1 and include both ends, and <code>#</code> counts <em>bytes</em>. Five habits and every string line in a config reads cleanly.</p>
+
+<p>Strings are the other half of a config — paths, colours like <code>"#111"</code>, keymap names,
+formatted messages. Lua's string model is small but its spellings differ from all three languages you
+know. This lesson is those differences, and the one piece of genuinely new syntax the course has been
+deferring: the <code>:</code> method call.</p>
+
+<h2>Join with <code>..</code>, and mind the coercion</h2>
+<p><code>..</code> is concatenation; <code>+</code> is always arithmetic (Lesson 01 flagged this). The
+twist: Lua <strong>coerces between strings and numbers automatically</strong>. Concatenation turns a
+number into its text; arithmetic turns a numeric string into a number.</p>
+
+<pre><code>print(<span class="c-str">"width="</span> .. <span class="c-num">80</span>)   <span class="c-comment">--> width=80   (number coerced to string)</span>
+print(<span class="c-str">"10"</span> + <span class="c-num">5</span>)        <span class="c-comment">--> 15         (numeric string coerced to number!)</span></code></pre>
+
+<div class="gotcha">
+  That second line is the trap. <strong>Python</strong> raises a <code>TypeError</code>;
+  <strong>JavaScript</strong> makes <code>"10" + 5</code> the string <code>"105"</code> because its
+  <code>+</code> is overloaded for concatenation. Lua does neither: <code>+</code> is only ever
+  arithmetic, so it coerces <code>"10"</code> to a number and gives <code>15</code>. Keep the two
+  operators straight — <code>..</code> to join, <code>+</code> to add — and never rely on the
+  string-to-number coercion; make conversions explicit with <code>tonumber</code>/<code>tostring</code>.
+</div>
+
+<div class="quiz" data-answer="0">
+  <p class="q">In Lua, what does <code>print("10" + 5)</code> display?</p>
+  <button>the number 15, the string is coerced</button>
+  <button>the string 105, the values are joined</button>
+  <button>a type error, the types do not match</button>
+  <button>the number 10, the 5 is discarded</button>
+  <p class="why" hidden>Lua's <code>+</code> is purely arithmetic, so a numeric string is coerced to a
+  number and added: <code>15</code>. JavaScript would concatenate to <code>"105"</code>; Python would
+  raise. To join, you must write <code>..</code>.</p>
+</div>
+
+<h2>Methods via <code>:</code> — the one new syntax</h2>
+<p>Every string carries the <code>string</code> library as its method table, so you can call its
+functions directly on any string value. <code>s:upper()</code> is pure sugar for
+<code>string.upper(s)</code> — the colon passes <code>s</code> as the hidden first argument.</p>
+
+<pre><code><span class="c-key">local</span> s = <span class="c-str">"hypr"</span>
+print(s:upper())            <span class="c-comment">--> HYPR</span>
+print(s:sub(<span class="c-num">1</span>, <span class="c-num">2</span>))          <span class="c-comment">--> hy      (same as string.sub(s, 1, 2))</span>
+print(string.upper(s))      <span class="c-comment">--> HYPR    (the un-sugared form)</span></code></pre>
+
+<div class="anchor">
+  This looks like <strong>Python/Ruby</strong> method calls (<code>s.upper()</code>), and reads the
+  same way — but note the colon. In Lua, <code>s:upper()</code> passes <code>self</code>;
+  <code>s.upper()</code> with a <em>dot</em> would look the method up but pass nothing, so it misbehaves.
+  Rule: call string (and later, table) methods with <code>:</code>. You'll meet the same
+  <code>:</code>-defines-and-passes-<code>self</code> rule again when configs define their own methods.
+</div>
+
+<div class="quiz" data-answer="1">
+  <p class="q">What is <code>s:lower()</code> exactly equivalent to?</p>
+  <button>a bare call, <code>lower(s)</code></button>
+  <button>a self call, <code>string.lower(s)</code></button>
+  <button>a dotted call, <code>s.lower()</code></button>
+  <button>an empty call, <code>string.lower()</code></button>
+  <p class="why" hidden>The colon is sugar that passes the receiver as the first argument, so
+  <code>s:lower()</code> is <code>string.lower(s)</code>. The dotted <code>s.lower()</code> would pass
+  no argument, and <code>string.lower()</code> with none errors.</p>
+</div>
+
+<h2>Indices start at 1, include both ends, count from the end</h2>
+<p>String positions follow the same 1-based rule as tables (Lesson 03). <code>string.sub(s, i, j)</code>
+returns characters <code>i</code> through <code>j</code> <strong>inclusive</strong>, and negative
+positions count back from the end.</p>
+
+<pre><code><span class="c-key">local</span> s = <span class="c-str">"hyprland"</span>
+print(s:sub(<span class="c-num">1</span>, <span class="c-num">4</span>))    <span class="c-comment">--> hypr   (positions 1..4, both included)</span>
+print(s:sub(<span class="c-num">-4</span>))      <span class="c-comment">--> land   (last 4 characters)</span></code></pre>
+
+<div class="anchor">
+  Very different from <strong>Python slicing</strong> <code>s[0:4]</code>, which is 0-based and
+  <em>excludes</em> the end. Lua's <code>sub</code> is 1-based and <em>includes</em> it — the same
+  inclusive convention as the numeric <code>for</code> (Lesson 04). The negative-index shorthand
+  <em>does</em> match Python's <code>s[-4:]</code>, which is a handy point of overlap.
+</div>
+
+<h2><code>#</code> counts bytes, not characters</h2>
+<p><code>#s</code> gives the string's length in <strong>bytes</strong>. For plain ASCII that equals the
+character count, but Lua strings are raw byte sequences with no encoding awareness, so a multibyte
+UTF-8 character counts as several.</p>
+
+<pre><code>print(#<span class="c-str">"hypr"</span>)    <span class="c-comment">--> 4</span>
+print(#<span class="c-str">"café"</span>)    <span class="c-comment">--> 5   (the é is two UTF-8 bytes)</span></code></pre>
+
+<div class="version">
+  Counting actual characters isn't built into the language the same way across versions.
+  <span class="tag tag-54">Lua 5.4</span> ships a <code>utf8</code> library — <code>utf8.len("café")</code>
+  returns <code>4</code>, and <code>utf8.char</code>/<code>utf8.charpattern</code> help you walk
+  codepoints. <span class="tag tag-51">Lua 5.1</span> has <strong>no <code>utf8</code> library at all</strong>
+  (nor does the LuaJIT runtime), so there <code>#</code> and byte iteration are all you get out of the
+  box. Configs are mostly ASCII, so this rarely bites — but don't reach for <code>utf8.*</code> in code
+  that must load on 5.1.
+</div>
+
+<h2>Writing literals: quotes and long brackets</h2>
+<p>Single and double quotes are interchangeable and both honour escapes (<code>\n</code>, <code>\t</code>,
+<code>\\</code>). For multiline text, <strong>long brackets</strong> <code>[[ … ]]</code> take everything
+verbatim — no escape processing — and drop a newline immediately after the opening bracket.</p>
+
+<pre><code><span class="c-key">local</span> a = <span class="c-str">'single'</span>            <span class="c-comment">-- identical kind to "double"</span>
+<span class="c-key">local</span> block = [[
+line one
+line two
+]]                            <span class="c-comment">-- a multiline string; \n here is literal backslash-n</span></code></pre>
+
+<div class="anchor">
+  Long brackets are Lua's <strong>triple-quoted string</strong> (Python <code>"""…"""</code>) or JS
+  template literal — minus interpolation. There's no <code>${…}</code> / <code>f"…"</code> in Lua; to
+  build a string from parts you use <code>..</code> or <code>string.format</code> (next section). If the
+  text itself contains <code>]]</code>, bump the level: <code>[==[ … ]==]</code>.
+</div>
+
+<h2><code>string.format</code> — printf, with a 5.4 catch</h2>
+<p>For anything beyond simple joins, <code>string.format</code> follows C's <code>printf</code>:
+<code>%s</code> for a string, <code>%d</code> for an integer, <code>%x</code> for hex, <code>%02d</code>
+to pad. It's the clean way to assemble config values.</p>
+
+<pre><code>print(string.format(<span class="c-str">"[%s] width=%d"</span>, <span class="c-str">"hypr"</span>, <span class="c-num">80</span>))   <span class="c-comment">--> [hypr] width=80</span></code></pre>
+
+<div class="version">
+  <code>%d</code> reconnects to Lesson 02. In <span class="tag tag-54">Lua 5.4</span>, <code>%d</code>
+  demands a value with an integer representation: <code>string.format("%d", 3.0)</code> is fine (3.0 is
+  a whole number), but <code>string.format("%d", 3.5)</code> <strong>errors</strong> — "number has no
+  integer representation." In <span class="tag tag-51">Lua 5.1</span>, where every number is a float,
+  <code>%d</code> simply truncates, so <code>string.format("%d", 3.5)</code> quietly yields
+  <code>"3"</code>. If a value might be fractional, round it explicitly (<code>math.floor</code>) before
+  <code>%d</code> so both versions agree.
+</div>
+
+<div class="reveal">
+  <p class="q">Predict all three printed lines, then reveal.</p>
+<pre><code><span class="c-key">local</span> s = <span class="c-str">"hyprland"</span>
+print(s:sub(<span class="c-num">1</span>, <span class="c-num">4</span>))
+print(s:sub(<span class="c-num">-4</span>))
+print(#s)</code></pre>
+  <button class="reveal-btn">Reveal answer</button>
+  <div class="answer" hidden>
+    <p><code>s:sub(1, 4)</code> → <strong><code>hypr</code></strong>. Positions 1 through 4, both ends
+    included.</p>
+    <p><code>s:sub(-4)</code> → <strong><code>land</code></strong>. A negative start counts from the end;
+    with no second index it runs to the end of the string.</p>
+    <p><code>#s</code> → <strong><code>8</code></strong>. Eight ASCII bytes, so eight here — bytes and
+    characters coincide because it's all ASCII.</p>
+  </div>
+</div>
+
+<h2>Putting it together</h2>
+<p>The five habits in one config-shaped snippet — coercing join, a <code>:</code> method, and
+<code>format</code>:</p>
+
+<pre><code><span class="c-key">local</span> name = <span class="c-str">"hypr"</span>
+<span class="c-key">local</span> file = name .. <span class="c-num">54</span> .. <span class="c-str">".conf"</span>              <span class="c-comment">--> hypr54.conf  (number coerced)</span>
+print(file:upper())                            <span class="c-comment">--> HYPR54.CONF</span>
+print(string.format(<span class="c-str">"loading %s (%d bytes)"</span>, file, #file))  <span class="c-comment">--> loading hypr54.conf (11 bytes)</span></code></pre>
+
+<div class="source">
+  Primary: <a href="https://www.lua.org/manual/5.4/manual.html#6.4">Lua 5.4 Reference Manual §6.4 "String Manipulation"</a>
+  for <code>sub</code>/<code>format</code> and the 1-based positions, plus
+  <a href="https://www.lua.org/manual/5.4/manual.html#6.5">§6.5 "UTF-8 Support"</a> for the 5.4-only
+  <code>utf8</code> library.
+</div>
+
+<div class="ask">
+  I'm your teacher — worth asking: <em>"what's the full <code>%</code> vocabulary for
+  <code>string.format</code>?"</em> or <em>"how do patterns (<code>string.match</code>/<code>gsub</code>)
+  differ from real regex?"</em> (Short version: Lua patterns are their own mini-language, not PCRE —
+  a lesson of their own if the mission ever needs it.)
+</div>
+
+<h3>Retrieval check (from memory, no scrolling)</h3>
+<ol>
+  <li>Which operator joins strings, and what does <code>+</code> do to <code>"10"</code>?</li>
+  <li>Rewrite <code>s:upper()</code> without the colon.</li>
+  <li>What does <code>("hyprland"):sub(1, 4)</code> return, and why isn't it three characters?</li>
+  <li>Does <code>#s</code> count bytes or characters — and which version gives you a <code>utf8</code> library?</li>
+  <li>Why can <code>string.format("%d", 3.5)</code> behave differently on 5.1 and 5.4?</li>
+</ol>
+
+<div class="lesson-nav">
+  <a href="0004-control-flow-and-iteration.html">← Lesson 04</a>
+  <a href="../reference/strings.html">📇 Reference: Strings</a>
+  <span>End of the current run — ask your teacher for what's next</span>
+</div>
+
+</body>
+</html>
