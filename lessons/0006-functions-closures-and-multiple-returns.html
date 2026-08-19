@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 06 · Functions, closures &amp; multiple returns</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/quiz.js"></script>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Lesson 06</span>
+</div>
+
+<h1>Functions, closures &amp; multiple returns</h1>
+<p class="subtitle">Functions are ordinary values, they can return <em>several</em> values at once, and the rules for how those values get truncated or padded are the only real surprises here.</p>
+
+<p>You've written closures in three languages, so the mechanics aren't new — but two Lua traits are:
+a function can <strong>return more than one value</strong> (not a tuple — genuinely several), and Lua
+silently <strong>adjusts</strong> value lists to fit. Get those and the callback tables, factories,
+and <code>require</code> lines in a config stop surprising you.</p>
+
+<h2>Functions are first-class values</h2>
+<p>A function is a value like any other: store it in a local, a table field, pass it as an argument.
+The named forms are sugar for an assignment.</p>
+
+<pre><code><span class="c-key">local</span> <span class="c-key">function</span> save() … <span class="c-key">end</span>          <span class="c-comment">-- sugar, and visible to itself (recursion)</span>
+<span class="c-key">local</span> save = <span class="c-key">function</span>() … <span class="c-key">end</span>       <span class="c-comment">-- same value; but name not in scope inside yet</span>
+
+<span class="c-key">local</span> handlers = {                     <span class="c-comment">-- functions living in a table — the config idiom</span>
+  save = <span class="c-key">function</span>() … <span class="c-key">end</span>,
+  quit = <span class="c-key">function</span>() … <span class="c-key">end</span>,
+}</code></pre>
+
+<div class="anchor">
+  First-class functions work as in <strong>Python, Ruby, and JavaScript</strong> — no surprise. One
+  fine point: <code>local function save()</code> declares the name <em>before</em> the body, so the
+  function can call itself; the desugared <code>local save = function()</code> does not, so a recursive
+  reference inside would hit an earlier/global <code>save</code>. Reach for <code>local function</code>
+  when it recurses.
+</div>
+
+<h2>Multiple return values — the big feature</h2>
+<p>A Lua function can return several values, and you assign them positionally. Too few names on the
+left? The extras are dropped. Too many? The surplus become <code>nil</code>.</p>
+
+<pre><code><span class="c-key">local</span> <span class="c-key">function</span> bounds() <span class="c-key">return</span> <span class="c-num">1</span>, <span class="c-num">80</span> <span class="c-key">end</span>
+<span class="c-key">local</span> lo, hi = bounds()      <span class="c-comment">--> lo=1, hi=80</span>
+<span class="c-key">local</span> a, b, c = bounds()    <span class="c-comment">--> a=1, b=80, c=nil   (padded)</span>
+<span class="c-key">local</span> only = bounds()       <span class="c-comment">--> only=1             (rest dropped)</span></code></pre>
+
+<div class="anchor">
+  This is <em>not</em> Python's "return a tuple." Python hands back one object you can store in one
+  variable; Lua returns a genuine <strong>list of values</strong> that you cannot bottle up in a single
+  variable — assign them to several names, or they're lost. Ruby (<code>a, b = meth</code>) and JS array
+  destructuring are closer, but even they wrap a real object; Lua's multiple values are ephemeral.
+</div>
+
+<h2>How value lists get adjusted</h2>
+<p>The surprise is <em>where</em> a call keeps all its values. A call expands to all its results
+<strong>only in the last position</strong> of a list. Anywhere else — or wrapped in parentheses — it's
+truncated to exactly one.</p>
+
+<pre><code><span class="c-key">local</span> <span class="c-key">function</span> f() <span class="c-key">return</span> <span class="c-num">1</span>, <span class="c-num">2</span> <span class="c-key">end</span>
+print(<span class="c-num">10</span>, f())     <span class="c-comment">--> 10  1  2   (f is last: expands)</span>
+print(f(), <span class="c-num">10</span>)     <span class="c-comment">--> 1  10      (f not last: truncated to 1)</span>
+print((f()))      <span class="c-comment">--> 1          (parentheses force exactly one)</span></code></pre>
+
+<div class="gotcha">
+  Two habits fall out of this. Wrapping a call in parentheses, <code>(f())</code>, is the deliberate way
+  to say "just the first value." And putting a multi-value call anywhere but last silently discards its
+  tail — a real bug when you write <code>t = { f(), other }</code> expecting all of <code>f</code>'s
+  results in the table. If you need them mid-list, capture into locals first.
+</div>
+
+<div class="quiz" data-answer="0">
+  <p class="q">Given <code>local function f() return 1, 2 end</code>, what is <code>z</code> after <code>local x, y, z = f()</code>?</p>
+  <button>nil, f returned only two values</button>
+  <button>2, the last value repeats to fill</button>
+  <button>0, missing numbers default to zero</button>
+  <button>an error, too few values returned</button>
+  <p class="why" hidden>The left side asks for three values but <code>f</code> supplies two, so the extra
+  name is padded with <code>nil</code> — never an error, never a repeat. This is the same "missing means
+  nil" rule from Lesson 01.</p>
+</div>
+
+<h2>Varargs: <code>...</code></h2>
+<p>A trailing <code>...</code> in the parameter list collects any extra arguments. Inside, <code>...</code>
+is itself a value list — pack it into a table with <code>{...}</code>, or count with
+<code>select("#", ...)</code>.</p>
+
+<pre><code><span class="c-key">local</span> <span class="c-key">function</span> log(level, ...)
+  <span class="c-key">local</span> args = {...}                 <span class="c-comment">-- the extras as a sequence</span>
+  print(level, select(<span class="c-str">"#"</span>, ...))    <span class="c-comment">-- count, counts trailing nils too</span>
+<span class="c-key">end</span></code></pre>
+
+<div class="version">
+  <span class="tag tag-54">Lua 5.4</span> offers <code>table.pack(...)</code>, which returns a table with an
+  <code>.n</code> field holding the true count (so it survives trailing <code>nil</code>s that
+  <code>{...}</code> and <code>#</code> would miscount). <span class="tag tag-51">Lua 5.1</span> has
+  <strong>no <code>table.pack</code></strong> — use <code>select("#", ...)</code>, which exists in both,
+  when the count matters. (And recall Lesson 03: to spread a packed table back out it's
+  <code>unpack</code> on 5.1, <code>table.unpack</code> on 5.4.)
+</div>
+
+<h2>Closures capture by reference</h2>
+<p>An inner function sees and keeps the locals ("upvalues") of the enclosing scope — captured live, not
+copied. Standard closure behaviour. The Lua-specific nicety is the loop: each iteration of a
+<code>for</code> makes a <strong>fresh</strong> loop variable, so closures created in a loop each capture
+their own value.</p>
+
+<pre><code><span class="c-key">local</span> fns = {}
+<span class="c-key">for</span> i = <span class="c-num">1</span>, <span class="c-num">3</span> <span class="c-key">do</span> fns[i] = <span class="c-key">function</span>() <span class="c-key">return</span> i <span class="c-key">end</span> <span class="c-key">end</span>
+print(fns[<span class="c-num">1</span>](), fns[<span class="c-num">2</span>](), fns[<span class="c-num">3</span>]())   <span class="c-comment">--> 1  2  3</span></code></pre>
+
+<div class="anchor">
+  This is a place Lua tracks <strong>JavaScript's <code>let</code></strong>, not Python. In JS with
+  <code>let i</code> each iteration is a fresh binding and you get <code>1 2 3</code> — exactly Lua. With
+  old <code>var i</code>, all three closures shared one variable and printed <code>3 3 3</code>. Python
+  has that same late-binding trap (all closures see the final <code>i</code>). Lua spares you it: the
+  loop variable is fresh per iteration, so your JS-<code>let</code> instinct is the right one here.
+</div>
+
+<div class="quiz" data-answer="2">
+  <p class="q">What does <code>print((f()))</code> show when <code>f</code> returns <code>1, 2</code>?</p>
+  <button>1 2, both values print</button>
+  <button>2, only the last value survives</button>
+  <button>1, parentheses truncate to one value</button>
+  <button>an error, parentheses are invalid here</button>
+  <p class="why" hidden>Wrapping a call in parentheses forces it to exactly one result — the first — so
+  only <code>1</code> reaches <code>print</code>. Without the parens and in last position,
+  <code>print(f())</code> would show <code>1  2</code>.</p>
+</div>
+
+<h2>Call sugar you'll see everywhere</h2>
+<p>Two shorthands appear constantly in real configs. A call with a <strong>single string or single
+table literal</strong> may drop the parentheses. And the <code>:</code> from Lesson 05 also
+<em>defines</em> methods, quietly adding a <code>self</code> parameter.</p>
+
+<pre><code>require <span class="c-str">"socket"</span>          <span class="c-comment">-- same as require("socket")</span>
+setup { width = <span class="c-num">80</span> }        <span class="c-comment">-- same as setup({ width = 80 }) — the config idiom</span>
+
+<span class="c-key">function</span> obj:greet(msg) … <span class="c-key">end</span>   <span class="c-comment">-- defines obj.greet(self, msg); self is implicit</span></code></pre>
+
+<div class="anchor">
+  The <code>f{ … }</code> form is why config files read as <code>plugin.setup { … }</code> with no visible
+  parentheses — it's an ordinary call taking one table. Nothing magic: strip it back to
+  <code>setup({ … })</code> in your head. And <code>obj:greet(m)</code> to call, <code>obj:greet</code> to
+  define, both thread <code>self</code> — the mirror of the string methods you already use.
+</div>
+
+<div class="reveal">
+  <p class="q">Predict the printed values, then reveal.</p>
+<pre><code><span class="c-key">local</span> <span class="c-key">function</span> f() <span class="c-key">return</span> <span class="c-num">1</span>, <span class="c-num">2</span> <span class="c-key">end</span>
+print(f(), f())</code></pre>
+  <button class="reveal-btn">Reveal answer</button>
+  <div class="answer" hidden>
+    <p><strong><code>1&nbsp;&nbsp;1&nbsp;&nbsp;2</code></strong>. The first <code>f()</code> is not in the
+    last position, so it's truncated to a single value, <code>1</code>. The second <code>f()</code>
+    <em>is</em> last, so it expands to all its results, <code>1</code> and <code>2</code>. Three values
+    reach <code>print</code>: <code>1</code>, <code>1</code>, <code>2</code>.</p>
+    <p>This holds identically on 5.1 and 5.4 — value-list adjustment is core language, not a version
+    feature.</p>
+  </div>
+</div>
+
+<h2>Putting it together</h2>
+<p>A closure factory — first-class return, a captured upvalue, multiple calls — the shape a config uses
+for toggles and counters:</p>
+
+<pre><code><span class="c-key">local</span> <span class="c-key">function</span> make_toggler(state)
+  <span class="c-key">return</span> <span class="c-key">function</span>()          <span class="c-comment">-- captures `state` by reference</span>
+    state = <span class="c-key">not</span> state
+    <span class="c-key">return</span> state
+  <span class="c-key">end</span>
+<span class="c-key">end</span>
+
+<span class="c-key">local</span> toggle = make_toggler(<span class="c-key">false</span>)
+print(toggle(), toggle())     <span class="c-comment">--> true  false</span></code></pre>
+
+<div class="source">
+  Primary: <a href="https://www.lua.org/manual/5.4/manual.html#3.4.11">Lua 5.4 Reference Manual §3.4.11 "Function Definitions"</a>
+  for the call/return and adjustment rules, and
+  <a href="https://www.lua.org/pil/6.html">Programming in Lua §6 "More about Functions"</a> for closures
+  and varargs in the author's words.
+</div>
+
+<div class="ask">
+  I'm your teacher — worth asking: <em>"show me a real config bug from a mid-list multi-return,"</em> or
+  <em>"when is a closure the right tool in a declarative config versus just a table?"</em> (Usually:
+  closures for callbacks and lazy values; plain tables for static settings.)
+</div>
+
+<h3>Retrieval check (from memory, no scrolling)</h3>
+<ol>
+  <li>What happens to <code>c</code> in <code>local a, b, c = f()</code> when <code>f</code> returns two values?</li>
+  <li>Why does <code>print(f(), 10)</code> show only one of <code>f</code>'s results?</li>
+  <li>How do you force a call to yield exactly one value?</li>
+  <li>In a closure-in-a-loop, does Lua behave like JavaScript's <code>let</code> or its <code>var</code>?</li>
+  <li>Rewrite <code>setup { width = 80 }</code> with its parentheses restored.</li>
+</ol>
+
+<div class="lesson-nav">
+  <a href="0005-strings-and-the-method-call.html">← Lesson 05</a>
+  <a href="../reference/functions.html">📇 Reference: Functions &amp; closures</a>
+  <span>End of the current run — ask your teacher for what's next</span>
+</div>
+
+</body>
+</html>

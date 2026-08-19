@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reference · Functions &amp; closures</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<div class="masthead">
+  <span class="course">Lua for Configs</span>
+  <span>Reference card</span>
+</div>
+
+<h1>Functions &amp; closures</h1>
+<p class="subtitle">First-class values, several returns at once, and the adjustment rules that bite.</p>
+
+<h2>Defining</h2>
+<pre><code><span class="c-key">local</span> <span class="c-key">function</span> f(a, b) … <span class="c-key">end</span>     <span class="c-comment">-- name visible inside (recursion-safe)</span>
+<span class="c-key">local</span> f = <span class="c-key">function</span>(a, b) … <span class="c-key">end</span>   <span class="c-comment">-- name NOT visible in its own body yet</span>
+<span class="c-key">function</span> obj:m(x) … <span class="c-key">end</span>          <span class="c-comment">-- defines obj.m(self, x); self implicit</span>
+<span class="c-key">function</span> f(...) <span class="c-key">local</span> t = {...} <span class="c-key">end</span>  <span class="c-comment">-- varargs collected</span></code></pre>
+
+<h2>Multiple returns &amp; adjustment</h2>
+<table>
+  <tr><th>Context</th><th>Result of a call returning <code>1, 2</code></th></tr>
+  <tr><td><code>local x, y = f()</code></td><td><code>x=1, y=2</code></td></tr>
+  <tr><td><code>local x, y, z = f()</code></td><td><code>z=nil</code> — surplus names padded</td></tr>
+  <tr><td><code>local x = f()</code></td><td><code>x=1</code> — tail dropped</td></tr>
+  <tr><td><code>print(10, f())</code></td><td><code>10 1 2</code> — <strong>last position expands</strong></td></tr>
+  <tr><td><code>print(f(), 10)</code></td><td><code>1 10</code> — <strong>non-last truncates to 1</strong></td></tr>
+  <tr><td><code>print((f()))</code></td><td><code>1</code> — <strong>parens force exactly one</strong></td></tr>
+</table>
+
+<h2>Varargs count — a version split</h2>
+<pre><code>select(<span class="c-str">"#"</span>, ...)      <span class="c-comment">-- true count, works in BOTH versions</span>
+<span class="c-key">local</span> t = {...}        <span class="c-comment">-- sequence, but miscounts trailing nils</span></code></pre>
+<table>
+  <tr><th>&nbsp;</th><th>Lua 5.1</th><th>Lua 5.4</th></tr>
+  <tr><td>pack varargs w/ count</td><td>none — use <code>select("#", ...)</code></td><td><code>table.pack(...)</code> → has <code>.n</code></td></tr>
+  <tr><td>spread back out</td><td><code>unpack(t)</code></td><td><code>table.unpack(t)</code></td></tr>
+</table>
+
+<h2>Closures</h2>
+<pre><code><span class="c-comment">-- fresh loop variable per iteration → distinct captures:</span>
+<span class="c-key">for</span> i = <span class="c-num">1</span>, <span class="c-num">3</span> <span class="c-key">do</span> fns[i] = <span class="c-key">function</span>() <span class="c-key">return</span> i <span class="c-key">end</span> <span class="c-key">end</span>   <span class="c-comment">--> 1, 2, 3</span></code></pre>
+
+<div class="version">
+  <strong>Mostly version-agnostic.</strong> First-class functions, multiple returns, adjustment, and
+  closures are identical on <span class="tag tag-51">5.1</span> and <span class="tag tag-54">5.4</span>.
+  Only varargs packing differs: <code>table.pack</code> is 5.4-only; <code>select("#", ...)</code> is the
+  portable count. <strong>Closure/loop model:</strong> Lua's fresh-per-iteration loop variable matches
+  JavaScript <code>let</code> (not <code>var</code>, and not Python's late-binding capture).
+</div>
+
+<div class="lesson-nav">
+  <a href="../lessons/0006-functions-closures-and-multiple-returns.html">← Lesson 06: Functions, closures &amp; multiple returns</a>
+  <a href="https://www.lua.org/manual/5.4/manual.html#3.4.11">Lua 5.4 manual §3.4.11: Function Definitions →</a>
+</div>
+
+</body>
+</html>

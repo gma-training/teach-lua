@@ -53,7 +53,8 @@
 - L03 ✓ Tables — the only data structure
 - L04 ✓ Control flow & iteration (`if`/`for`, `pairs` vs `ipairs`)
 - L05 ✓ Strings & the `:` method call
-- (Later, from divergence backlog: `goto`, bitwise; possible full lessons on functions/closures and Lua patterns if the mission needs them)
+- L06 ✓ Functions, closures & multiple returns
+- (Later, from divergence backlog: `goto`, bitwise; possible full lesson on Lua patterns (`match`/`gsub`) if the mission needs it)
 
 ## Version-divergence backlog (5.1 vs 5.4) — teach explicitly when reached
 - Numbers: 5.1 all doubles; 5.4 has integer/float subtypes, `math.type`.
@@ -64,3 +65,4 @@
 - Integer `for` loop behaviour and `#` on tables with holes. — `#`-with-holes *covered L03*; integer `for` *covered L04*.
 - `utf8` library (5.3+) vs none on 5.1; `#s` is bytes. — *covered L05*
 - `string.format("%d", float)`: 5.4 errors on non-integer, 5.1 truncates. — *covered L05*
+- `table.pack` (5.2+) vs none on 5.1 for varargs count; `select("#", ...)` portable. — *covered L06*
